@@ -1,0 +1,24 @@
+Folderit n8n 0.3.0 - release candidate, 2026-10-10
+
+Verified locally
+- TypeScript build, official n8n lint and 41 contract tests.
+- Native n8n 2.42.5 with Node 24.21.0: document upload/download, OAuth token
+  renewal, search, integer metadata update/read/clear, version upload/history,
+  manual workflow start/status and scheduled version-event polling.
+- Exact binary comparisons, checkpoint persistence after an emitted event,
+  and no replay after restart. Only synthetic demo documents were modified.
+- No external runtime dependencies or embedded credentials in the npm archive.
+
+Before npm publication and n8n verification
+- Finish local editor owner setup and verify dropdowns/credentials visually.
+- Verify idle/restart polling behavior with supported Cloud and self-hosted
+  runtime versions. Legacy n8n static data may not persist quiet polls.
+- Review outstanding upstream tooling/peer-dependency advisories. The template
+  compiler is overridden to patched Handlebars 4.7.10 for development only.
+- Confirm API plan/access wording with Folderit and declare supported versions.
+- Run public GitHub CI successfully on the exact intended release commit.
+- Configure npm publishing access and a protected npm-release environment.
+- Publish from publish.yml with provenance, verify the installable package,
+  then submit it to n8n's Creator Portal. Publication is not n8n verification.
+
+No public npm release or n8n verification has been claimed.
