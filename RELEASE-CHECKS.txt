@@ -1,4 +1,4 @@
-Folderit n8n 0.3.0 - release candidate, 2026-10-10
+Folderit n8n 0.3.0 - published, 2026-10-10
 
 Verified locally
 - TypeScript build, official n8n lint and 43 contract tests.
@@ -32,15 +32,26 @@ Dependency assessment
   The release job only stages the tested archive using OIDC and provenance;
   a maintainer must approve the staged release through npm with 2FA.
 
-Remaining release gates
+Public release verified
+- GitHub CI 38051429195 passed on release commit 453ac89.
+- Protected npm-release environment requires maintainer review, disallows
+  administrator bypass, and only permits the main branch.
+- npm trusted publisher grants publish.yml staging access only.
+- GitHub run 38058519315 staged 0.3.0 with provenance; maintainer 2FA approval
+  published it as latest on 2026-10-10.
+- Registry installation matched all 39 tested archive files. Native n8n
+  read/download execution returned the exact expected 80-byte UTF-8 content.
+- Download SHA256:
+  173ebfc87014e5dc2bf5b3cd3a1a5aea7702dda95969d194200ea3f55c399661
+- Public provenance references the correct release archive, repository,
+  workflow and source commit 453ac891fc1cea9565eb884c61225244ebf21be2.
+- Package: https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0
+- Provenance: https://search.sigstore.dev/?logIndex=3187253309
+
+Remaining verification gates
+- Complete the n8n Creator Portal submission and review. npm publication
+  does not establish n8n verification or Cloud availability.
 - Confirm Cloud polling compatibility during n8n review; only the documented
   self-hosted runtime/configuration has been tested.
-- Run public GitHub CI successfully on the exact intended release commit.
-- Complete npm CLI login, reserve the new package through staged publishing,
-  configure trusted publishing and protect the npm-release environment.
-- Stage publish.yml's archive with provenance, approve it, verify the installed
-  registry package, then submit to the n8n Creator Portal.
 - API access is documented as a Folderit Tailor-plan feature; administrators
   must confirm their actual account access and permissions.
-
-No public npm release or n8n verification has been claimed.

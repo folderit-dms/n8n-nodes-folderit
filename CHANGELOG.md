@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 — unreleased
+## 0.3.0 — 2026-10-10
 
 - Reject startup or leadership changes without a saved polling checkpoint, avoiding silent rebaselining.
 - Verify quiet-poll persistence across restart on n8n 2.42.5 with durable cursors.

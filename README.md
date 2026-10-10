@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Development status:** local release candidate. Not published to npm, not verified by n8n, with a live round-trip workflow and OAuth token renewal verified in native n8n 2.42.5. The packed community node also passed a native read/download test. Local editor download/extraction, account and metadata-field selectors, and trigger preview are verified. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
+**Release status:** [0.3.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0) with GitHub Actions provenance. The registry-installed package passed a native n8n 2.42.5 read/download test with exact file contents. n8n verification and Cloud availability are pending. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
 
 ## Operations
 
@@ -103,15 +103,17 @@ Version 0.2.0 passed native document search, integer metadata write/readback, un
 
 Version 0.3.0 passed native version upload, exact 80-byte download comparison, manual workflow start and workflow/history reads. The tested workflow contained only a conditional step, so no approval request or notification was sent. A live helper poll emitted the exact new version once, and a native scheduled workflow resumed the captured checkpoint and emitted the same event. Checkpoint persistence and no replay after restart were verified after an emitted event.
 
-Local owner setup is complete. Browser testing verified the existing OAuth credential, account and metadata-field selectors, a complete read-only download/extraction workflow with the exact 80-byte UTF-8 test content, and manual trigger preview with the exact historical version. The icon loads from the installed archive. Folder, select-option and workflow pickers also passed in the editor, including select labels and exact workflow start-option resolution without executing writes. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. No npm package has been published. The earlier API harness also passed folder/file lists. The tooling dependency advisory has been assessed; upstream fixes and public-release checks are tracked in RELEASE-CHECKS.txt.
+Local owner setup is complete. Browser testing verified the existing OAuth credential, account and metadata-field selectors, a complete read-only download/extraction workflow with the exact 80-byte UTF-8 test content, and manual trigger preview with the exact historical version. The icon loads from the installed archive. Folder, select-option and workflow pickers also passed in the editor, including select labels and exact workflow start-option resolution without executing writes. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. The public npm 0.3.0 package was subsequently installed from the registry: all 39 files matched the tested archive, and a native read/download execution returned the exact expected 80 bytes. The earlier API harness also passed folder/file lists. The tooling dependency advisory has been assessed; upstream fixes and public-release checks are tracked in RELEASE-CHECKS.txt.
 
 ## Public release
 
 GitHub repository: https://github.com/folderit-dms/n8n-nodes-folderit
 
-Planned npm package: `n8n-nodes-folderit` (availability must be checked before publication).
+Public npm package: [n8n-nodes-folderit 0.3.0](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0). Self-hosted users can install `n8n-nodes-folderit` through **Settings → Community Nodes**, subject to their instance settings.
 
-Publish via the included GitHub Actions workflow with npm provenance. Configure publishing access in the owning accounts; do not add tokens to source files. After publishing and live validation, submit the package at https://creators.n8n.io/nodes. n8n decides verification. npm publication alone does not make the connector available in n8n Cloud.
+Version 0.3.0 was built and staged by the included GitHub Actions workflow using npm trusted publishing and provenance, then approved by the maintainer with 2FA. [Release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38058519315) · [Provenance](https://search.sigstore.dev/?logIndex=3187253309).
+
+Verification is handled through https://creators.n8n.io/nodes. n8n decides approval; npm publication alone does not make the connector available in n8n Cloud.
 
 ## References
 
