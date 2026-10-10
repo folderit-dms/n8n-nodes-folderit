@@ -58,9 +58,22 @@ Each output has a stable audit `id`, `auditUid`, sequence `auditId`, `event` and
 
 The trigger reads the account's recent audit log in descending sequence order, scans at most 1,000 audit rows per poll, and emits new matching events oldest first. Version enrichment scans at most 1,000 versions per file and fails if the exact version cannot be found. It never substitutes the current version. Failures leave the checkpoint unchanged. Filtered non-matching events still advance a successful poll's checkpoint.
 
-Poll at least hourly and use a shorter interval on busy accounts. This implementation uses the API's default one-day audit window; interruptions longer than 23 hours and backlogs beyond the scan limit stop with an explicit error. Reconcile missed events first, then recreate the trigger node to establish a new baseline. It does not use the unverified GET-body sync cursor from the Zapier candidate. Sequence polling assumes the service exposes events in sequence order; delayed lower-sequence events and audit access changes need separate reconciliation. On n8n runtimes using legacy workflow static data, quiet polls may only update memory until an event starts an execution. Restarting before the first emitted event can establish a fresh baseline; long quiet periods may require reconciliation after restart. Durable cursor support and idle/restart behavior remain public-release compatibility checks. Polling is not an exactly-once delivery guarantee: downstream retries can repeat actions, so use the audit UID with a durable deduplication ledger for consequential work.
+Poll at least hourly and use a shorter interval on busy accounts. This implementation uses the API's default one-day audit window; interruptions longer than 23 hours and backlogs beyond the scan limit stop with an explicit error. Reconcile missed events first, then recreate the trigger node to establish a new baseline. It does not use the unverified GET-body sync cursor from the Zapier candidate. Sequence polling assumes the service exposes events in sequence order; delayed lower-sequence events and audit access changes need separate reconciliation. On n8n runtimes using legacy workflow static data, quiet polls may only update memory until an event starts an execution. A restart without a saved checkpoint now stops with a reconciliation error instead of silently establishing a fresh baseline. Long quiet periods on legacy runtimes can still require reconciliation after restart. Quiet-poll persistence was verified on self-hosted n8n 2.42.5 with durable polling enabled (configuration below); n8n Cloud compatibility remains subject to review. Polling is not an exactly-once delivery guarantee: downstream retries can repeat actions, so use the audit UID with a durable deduplication ledger for consequential work.
 
 Import [watch-file-versions.json](examples/watch-file-versions.json) for a credential-free starting point. Select your account, optional file UID and credential before activation.
+
+## Tested polling configuration
+
+Action nodes and the polling trigger were tested on self-hosted n8n **2.42.5**, Node **24.21.0**. To persist quiet polling checkpoints on that tested runtime, all four settings were enabled before starting n8n:
+
+```sh
+N8N_SCHEDULER_ENABLED=true
+N8N_SCHEDULER_POLL_TRIGGERS_ENABLED=true
+N8N_USE_WORKFLOW_PUBLICATION_SERVICE=true
+N8N_POLLER_DURABLE_CURSORS_ENABLED=true
+```
+
+A quiet poll saved its cursor with zero workflow executions; restarting n8n preserved that cursor and subsequent quiet polls advanced its timestamp with no errors. These are version-specific runtime settings, not a claim of compatibility with every n8n deployment. Cloud administrators control their runtime configuration. The trigger uses n8n's public polling context API and fails explicitly when a restart has no saved checkpoint. Reconcile missed activity before deliberately establishing a new baseline.
 
 ## Development
 
@@ -84,13 +97,13 @@ If Folderit rejects a request, confirm the account UID, permissions and node inp
 
 ## Validation status
 
-TypeScript build, n8n lint and 41 automated tests pass. On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
+TypeScript build, n8n lint and 43 automated tests pass. On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
 
 Version 0.2.0 passed native document search, integer metadata write/readback, unchanged-value suppression and clear verification. A separate live read confirmed cleanup. Account/folder/metadata picker calls and folder search passed through the live helper harness. Other metadata types have contract tests but have not all been exercised in live n8n workflows.
 
 Version 0.3.0 passed native version upload, exact 80-byte download comparison, manual workflow start and workflow/history reads. The tested workflow contained only a conditional step, so no approval request or notification was sent. A live helper poll emitted the exact new version once, and a native scheduled workflow resumed the captured checkpoint and emitted the same event. Checkpoint persistence and no replay after restart were verified after an emitted event.
 
-Local owner setup is complete. Browser testing verified the existing OAuth credential, account and metadata-field selectors, a complete read-only download/extraction workflow with the exact 80-byte UTF-8 test content, and manual trigger preview with the exact historical version. The icon loads from the installed archive. Folder, select-option and workflow pickers still need visual coverage. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. No npm package has been published. The earlier API harness also passed folder/file lists. Dependency-audit and public-release checks remain open; see RELEASE-CHECKS.txt.
+Local owner setup is complete. Browser testing verified the existing OAuth credential, account and metadata-field selectors, a complete read-only download/extraction workflow with the exact 80-byte UTF-8 test content, and manual trigger preview with the exact historical version. The icon loads from the installed archive. Folder, select-option and workflow pickers also passed in the editor, including select labels and exact workflow start-option resolution without executing writes. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. No npm package has been published. The earlier API harness also passed folder/file lists. The tooling dependency advisory has been assessed; upstream fixes and public-release checks are tracked in RELEASE-CHECKS.txt.
 
 ## Public release
 

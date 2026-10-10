@@ -1,26 +1,46 @@
 Folderit n8n 0.3.0 - release candidate, 2026-10-10
 
 Verified locally
-- TypeScript build, official n8n lint and 41 contract tests.
+- TypeScript build, official n8n lint and 43 contract tests.
 - Native n8n 2.42.5 with Node 24.21.0: document upload/download, OAuth token
   renewal, search, integer metadata update/read/clear, version upload/history,
   manual workflow start/status and scheduled version-event polling.
-- Exact binary comparisons, checkpoint persistence after an emitted event,
-  and no replay after restart. Only synthetic demo documents were modified.
+- Editor: credential, account, folder, metadata field, select-option and workflow
+  selectors; binary download/text extraction and exact-version trigger preview.
+- Exact binary comparisons, checkpoint persistence after emitted events, and
+  quiet-poll persistence across restart with durable polling (README settings).
+  Quiet test produced zero executions; all scheduled QA workflows are inactive.
+- Missing startup checkpoint fails before API requests instead of rebaselining.
 - No external runtime dependencies or embedded credentials in the npm archive.
 
-Before npm publication and n8n verification
-- Finish visual coverage of folder, select-option and workflow pickers.
-  Owner setup, credential use, account/metadata selectors, binary download/text
-  extraction and exact-version trigger preview have passed in the editor.
-- Verify idle/restart polling behavior with supported Cloud and self-hosted
-  runtime versions. Legacy n8n static data may not persist quiet polls.
-- Review outstanding upstream tooling/peer-dependency advisories. n8n tooling pins
-  Handlebars 4.7.9; await an upstream fix. n8n rules prohibit package overrides.
-- Confirm API plan/access wording with Folderit and declare supported versions.
+Dependency assessment
+- npm audit reports 23 upstream tooling/peer-tree advisories: 5 moderate,
+  17 high and 1 critical. This is not a vulnerability-free dependency tree.
+- The critical GHSA-8r5x-fm3f-whwj affects Handlebars compilation of untrusted
+  AST objects. Official advisory says template-string-only use is unaffected:
+  https://github.com/advisories/GHSA-8r5x-fm3f-whwj
+- Inspected @n8n/node-cli 0.51.3 template/core.js and commands/release.js:
+  both compile UTF-8 template strings read from files, not AST objects.
+  Our build/lint/test/pack workflow does not invoke CLI scaffolding or release.
+  Based on these call sites, the critical exploit path is not reached here.
+- The CLI still pins Handlebars 4.7.9, including upstream CLI 0.51.4.
+  Await a compatible upstream fix; official n8n lint prohibits overrides.
+- No third-party runtime dependencies are bundled by this connector.
+  n8n-workflow is supplied by the host; host advisories remain the operator's
+  responsibility. Other tooling advisories are not claimed patched.
+- Build dependencies run without publishing credentials in a separate job.
+  The release job only stages the tested archive using OIDC and provenance;
+  a maintainer must approve the staged release through npm with 2FA.
+
+Remaining release gates
+- Confirm Cloud polling compatibility during n8n review; only the documented
+  self-hosted runtime/configuration has been tested.
 - Run public GitHub CI successfully on the exact intended release commit.
-- Configure npm publishing access and a protected npm-release environment.
-- Publish from publish.yml with provenance, verify the installable package,
-  then submit it to n8n's Creator Portal. Publication is not n8n verification.
+- Complete npm CLI login, reserve the new package through staged publishing,
+  configure trusted publishing and protect the npm-release environment.
+- Stage publish.yml's archive with provenance, approve it, verify the installed
+  registry package, then submit to the n8n Creator Portal.
+- API access is documented as a Folderit Tailor-plan feature; administrators
+  must confirm their actual account access and permissions.
 
 No public npm release or n8n verification has been claimed.

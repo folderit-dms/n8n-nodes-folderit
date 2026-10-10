@@ -2,6 +2,8 @@
 
 ## 0.3.0 — unreleased
 
+- Reject startup or leadership changes without a saved polling checkpoint, avoiding silent rebaselining.
+- Verify quiet-poll persistence across restart on n8n 2.42.5 with durable cursors.
 - Keep polling sequence comparisons compatible with the ES2019 build target.
 - Add file version upload and paginated version history with explicit lock support.
 - Add available workflow discovery, dynamic start options, queued start and progress reads.
