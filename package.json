@@ -54,8 +54,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "overrides": {
-    "handlebars": "4.7.10"
   }
 }

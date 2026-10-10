@@ -2,8 +2,7 @@
 
 ## 0.3.0 — unreleased
 
-- Pin the development template compiler to patched Handlebars 4.7.10.
-
+- Keep polling sequence comparisons compatible with the ES2019 build target.
 - Add file version upload and paginated version history with explicit lock support.
 - Add available workflow discovery, dynamic start options, queued start and progress reads.
 - Add a polling trigger for new files, folders, versions, record edits, metadata and task events.

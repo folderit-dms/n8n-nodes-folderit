@@ -13,8 +13,8 @@ Before npm publication and n8n verification
 - Finish local editor owner setup and verify dropdowns/credentials visually.
 - Verify idle/restart polling behavior with supported Cloud and self-hosted
   runtime versions. Legacy n8n static data may not persist quiet polls.
-- Review outstanding upstream tooling/peer-dependency advisories. The template
-  compiler is overridden to patched Handlebars 4.7.10 for development only.
+- Review outstanding upstream tooling/peer-dependency advisories. n8n tooling pins
+  Handlebars 4.7.9; await an upstream fix. n8n rules prohibit package overrides.
 - Confirm API plan/access wording with Folderit and declare supported versions.
 - Run public GitHub CI successfully on the exact intended release commit.
 - Configure npm publishing access and a protected npm-release environment.
