@@ -1,0 +1,58 @@
+name: Publish to npm
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Exact package version approved for publication'
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci
+      - name: Check approved version
+        env:
+          APPROVED_VERSION: ${{ inputs.version }}
+        run: node -e 'if(require("./package.json").version !== process.env.APPROVED_VERSION) process.exit(1)'
+      - run: npm run build
+      - run: npm run lint
+      - run: npm test
+      - run: npm pack
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: n8n-nodes-folderit-*.tgz
+          if-no-files-found: error
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: npm-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+      - name: Publish the tested archive with provenance
+        run: npm publish ./n8n-nodes-folderit-*.tgz --ignore-scripts --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+# Configure npm trusted publishing for folderit-dms/n8n-nodes-folderit,
+# workflow publish.yml and environment npm-release. NPM_TOKEN is only needed
+# for the initial bootstrap release if package-level trust is unavailable.
+# Build dependencies run in a separate job without the publishing credential.
+# Protect npm-release with a required reviewer before dispatching a release.
