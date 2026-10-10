@@ -1,0 +1,246 @@
+{
+  "name": "Folderit — Native Round-trip Test",
+  "nodes": [
+    {
+      "id": "5895914b-b82f-4b85-8aeb-cc7a348f7a43",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "f8b4394b-fab8-4875-a0e2-0e5cb7040b8f",
+      "name": "Test Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"accountUid\": \"YOUR_ACCOUNT_UID\",\n  \"parentUid\": \"YOUR_TEST_PARENT_FOLDER_UID\",\n  \"folderName\": \"N8N NATIVE TEST 2026-10-10\",\n  \"text\": \"Folderit native n8n round-trip — 2026-10-10\\nSynthetic integration test only.\\n\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c5e822f8-c8df-41df-b0ec-84092fea64c4",
+      "name": "Create Test Folder",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "resource": "folder",
+        "operation": "create",
+        "accountUid": "={{ $('Test Settings').first().json.accountUid }}",
+        "folderUid": "={{ $('Test Settings').first().json.parentUid }}",
+        "name": "={{ $('Test Settings').first().json.folderName }}",
+        "returnDuplicateFolder": true
+      }
+    },
+    {
+      "id": "7dc7cc0e-bc1f-45ab-97b5-3f95eea5354a",
+      "name": "Prepare Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ { text: $('Test Settings').first().json.text } }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "c9845538-daaf-4da0-a80c-b702d4c0bf1a",
+      "name": "Make Test File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        300
+      ],
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "binaryPropertyName": "data",
+        "options": {
+          "fileName": "folderit-native-roundtrip.txt"
+        }
+      }
+    },
+    {
+      "id": "18357d02-f495-432a-80f7-d03174436448",
+      "name": "Upload Test File",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "accountUid": "={{ $('Test Settings').first().json.accountUid }}",
+        "folderUid": "={{ $('Create Test Folder').first().json.uid }}",
+        "binaryPropertyName": "data"
+      }
+    },
+    {
+      "id": "80a54e8b-7b1a-4266-854f-6b7b8863339b",
+      "name": "Get File Details",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "accountUid": "={{ $('Test Settings').first().json.accountUid }}",
+        "fileUid": "={{ $json.uid }}"
+      }
+    },
+    {
+      "id": "54b994a7-fe5e-4966-8985-c843159f32e5",
+      "name": "Download Test File",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "download",
+        "accountUid": "={{ $('Test Settings').first().json.accountUid }}",
+        "fileUid": "={{ $json.uid }}",
+        "outputBinaryField": "data"
+      }
+    },
+    {
+      "id": "f29eccd6-773a-4748-a54b-36a08a359cc3",
+      "name": "Read Downloaded Text",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "data",
+        "destinationKey": "downloadedText",
+        "options": {
+          "encoding": "utf8",
+          "keepSource": "both"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Test Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Settings": {
+      "main": [
+        [
+          {
+            "node": "Create Test Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Test Folder": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text": {
+      "main": [
+        [
+          {
+            "node": "Make Test File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make Test File": {
+      "main": [
+        [
+          {
+            "node": "Upload Test File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Test File": {
+      "main": [
+        [
+          {
+            "node": "Get File Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File Details": {
+      "main": [
+        [
+          {
+            "node": "Download Test File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Test File": {
+      "main": [
+        [
+          {
+            "node": "Read Downloaded Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

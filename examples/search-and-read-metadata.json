@@ -1,0 +1,111 @@
+{
+  "name": "Folderit \u2014 Search and Read Metadata",
+  "nodes": [
+    {
+      "id": "90df4a6a-e012-4815-9d1e-84c4451fe906",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "a457cabe-4632-49c9-ad68-3b9b06a5c3ca",
+      "name": "Search Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        300
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"accountUid\": \"YOUR_ACCOUNT_UID\",\n  \"parentUid\": \"YOUR_FOLDER_UID\",\n  \"query\": \"YOUR_DOCUMENT_NAME\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "b82ddfa1-08ea-4daa-8366-8b266c545fa1",
+      "name": "Search Documents",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        520,
+        300
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "search",
+        "accountUid": "={{ $('Search Settings').first().json.accountUid }}",
+        "query": "={{ $('Search Settings').first().json.query }}",
+        "queryFields": [
+          "name"
+        ],
+        "filters": {
+          "parentUid": "={{ $('Search Settings').first().json.parentUid }}"
+        },
+        "returnAll": false,
+        "limit": 10
+      }
+    },
+    {
+      "id": "9d9bf577-892c-4a6e-bf0d-7df288649d80",
+      "name": "Read Document Metadata",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        780,
+        300
+      ],
+      "parameters": {
+        "resource": "metadata",
+        "operation": "get",
+        "accountUid": "={{ $('Search Settings').first().json.accountUid }}",
+        "recordUid": "={{ $json.uid }}"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Search Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Settings": {
+      "main": [
+        [
+          {
+            "node": "Search Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Documents": {
+      "main": [
+        [
+          {
+            "node": "Read Document Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
