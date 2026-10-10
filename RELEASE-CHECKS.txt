@@ -10,7 +10,9 @@ Verified locally
 - No external runtime dependencies or embedded credentials in the npm archive.
 
 Before npm publication and n8n verification
-- Finish local editor owner setup and verify dropdowns/credentials visually.
+- Finish visual coverage of folder, select-option and workflow pickers.
+  Owner setup, credential use, account/metadata selectors, binary download/text
+  extraction and exact-version trigger preview have passed in the editor.
 - Verify idle/restart polling behavior with supported Cloud and self-hosted
   runtime versions. Legacy n8n static data may not persist quiet polls.
 - Review outstanding upstream tooling/peer-dependency advisories. n8n tooling pins

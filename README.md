@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Development status:** local release candidate. Not published to npm, not verified by n8n, with a live round-trip workflow and OAuth token renewal verified in native n8n 2.42.5. The packed community node also passed a native read/download test. Editor interaction remains pending. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
+**Development status:** local release candidate. Not published to npm, not verified by n8n, with a live round-trip workflow and OAuth token renewal verified in native n8n 2.42.5. The packed community node also passed a native read/download test. Local editor download/extraction, account and metadata-field selectors, and trigger preview are verified. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
 
 ## Operations
 
@@ -90,7 +90,7 @@ Version 0.2.0 passed native document search, integer metadata write/readback, un
 
 Version 0.3.0 passed native version upload, exact 80-byte download comparison, manual workflow start and workflow/history reads. The tested workflow contained only a conditional step, so no approval request or notification was sent. A live helper poll emitted the exact new version once, and a native scheduled workflow resumed the captured checkpoint and emitted the same event. Checkpoint persistence and no replay after restart were verified after an emitted event.
 
-The editor starts at localhost, but owner-account setup and visual interaction remain pending. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. Nothing has been published. The earlier API harness also passed folder/file lists. Dependency-audit and public-release checks remain open; see RELEASE-CHECKS.txt.
+Local owner setup is complete. Browser testing verified the existing OAuth credential, account and metadata-field selectors, a complete read-only download/extraction workflow with the exact 80-byte UTF-8 test content, and manual trigger preview with the exact historical version. The icon loads from the installed archive. Folder, select-option and workflow pickers still need visual coverage. The packed npm archive was installed offline into the n8n community-node directory, and a native read/download workflow passed with identical bytes. No npm package has been published. The earlier API harness also passed folder/file lists. Dependency-audit and public-release checks remain open; see RELEASE-CHECKS.txt.
 
 ## Public release
 
