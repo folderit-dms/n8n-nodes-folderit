@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Release status:** [0.3.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0) with GitHub Actions provenance. The registry-installed package passed a native n8n 2.42.5 read/download test with exact file contents. n8n verification and Cloud availability are pending. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
+**Release status:** [0.3.1 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.1) with GitHub Actions provenance and passes the official n8n community-package security scanner. The registry-installed package passed a native n8n 2.42.5 read/download test with exact file contents. n8n automated review has passed; the manual-review demo video and final approval are pending. Cloud availability is not yet approved. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
 
 ## Operations
 
@@ -109,11 +109,13 @@ Local owner setup is complete. Browser testing verified the existing OAuth crede
 
 GitHub repository: https://github.com/folderit-dms/n8n-nodes-folderit
 
-Public npm package: [n8n-nodes-folderit 0.3.0](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0). Self-hosted users can install `n8n-nodes-folderit` through **Settings → Community Nodes**, subject to their instance settings.
+Public npm package: [n8n-nodes-folderit 0.3.1](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.1). Self-hosted users can install `n8n-nodes-folderit` through **Settings → Community Nodes**, subject to their instance settings.
 
 Version 0.3.0 was built and staged by the included GitHub Actions workflow using npm trusted publishing and provenance, then approved by the maintainer with 2FA. [Release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38058519315) · [Provenance](https://search.sigstore.dev/?logIndex=3187253309).
 
-Verification is handled through https://creators.n8n.io/nodes. n8n decides approval; npm publication alone does not make the connector available in n8n Cloud.
+Version 0.3.1 explicitly leaves AI tool support disabled because document upload operations need binary workflow inputs. Its source and packaged files pass the official scanner, including provenance verification. [Patch release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38060180424).
+
+The package passed automated review in https://creators.n8n.io/nodes and now requires a demo video before manual review. n8n decides approval; npm publication alone does not make the connector available in n8n Cloud.
 
 ## References
 

@@ -1,4 +1,4 @@
-Folderit n8n 0.3.0 - published, 2026-10-10
+Folderit n8n 0.3.1 - published, 2026-10-10
 
 Verified locally
 - TypeScript build, official n8n lint and 43 contract tests.
@@ -48,9 +48,19 @@ Public release verified
 - Package: https://www.npmjs.com/package/n8n-nodes-folderit/v/0.3.0
 - Provenance: https://search.sigstore.dev/?logIndex=3187253309
 
+0.3.1 patch verified
+- Explicit usableAsTool declaration preserves normal-workflow binary behavior;
+  inline lint suppression removed. Build, lint and all 43 tests pass.
+- Public commit 050a1903393cfa838737cb9fe0c1f8a36bc83982; release run 38060180424.
+- All 39 registry-installed files match the tested archive.
+- Official public scanner passed provenance, source and distribution checks.
+- Resubmitted to n8n Creator Portal after maintainer-approved publication.
+- Native registry download test returned exact expected 80-byte UTF-8 content.
+
 Remaining verification gates
-- Complete the n8n Creator Portal submission and review. npm publication
-  does not establish n8n verification or Cloud availability.
+- n8n automated review passed. Manual Review Awaiting Video is the current
+  portal status. Supply an uncut demo of five minutes or less, then submit
+  for manual review. Verification and Cloud availability are not yet approved.
 - Confirm Cloud polling compatibility during n8n review; only the documented
   self-hosted runtime/configuration has been tested.
 - API access is documented as a Folderit Tailor-plan feature; administrators
