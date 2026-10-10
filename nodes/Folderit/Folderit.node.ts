@@ -244,8 +244,6 @@ export function validateUploadUrl(value: unknown): string {
 	return value;
 }
 
-// Binary uploads require main-input binary data, which AI tools cannot supply.
-// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class Folderit implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Folderit',
@@ -256,6 +254,8 @@ export class Folderit implements INodeType {
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Manage documents and folders in Folderit',
 		defaults: { name: 'Folderit' },
+		// Binary uploads require main-input binary data, which AI tools cannot supply.
+		usableAsTool: undefined,
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'folderitOAuth2Api', required: true }],
