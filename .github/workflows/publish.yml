@@ -44,15 +44,16 @@ jobs:
           node-version: '24'
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
+      - name: Install npm with staged publishing support
+        run: npm install --global npm@11.15.0
       - uses: actions/download-artifact@v4
         with:
           name: npm-package
-      - name: Publish the tested archive with provenance
-        run: npm publish ./n8n-nodes-folderit-*.tgz --ignore-scripts --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-# Configure npm trusted publishing for folderit-dms/n8n-nodes-folderit,
-# workflow publish.yml and environment npm-release. NPM_TOKEN is only needed
-# for the initial bootstrap release if package-level trust is unavailable.
-# Build dependencies run in a separate job without the publishing credential.
+      - name: Stage the tested archive with provenance
+        run: npm stage publish ./n8n-nodes-folderit-*.tgz --ignore-scripts --provenance --access public
+# Configure a staging-only npm trusted publisher for folderit-dms/n8n-nodes-folderit,
+# workflow publish.yml and environment npm-release. No npm token is required.
+# A first package reservation must exist before configuring package-level trust.
+# Build dependencies run in a separate job without publishing credentials.
 # Protect npm-release with a required reviewer before dispatching a release.
+# Approve the resulting staged release in npm with 2FA after reviewing provenance.
