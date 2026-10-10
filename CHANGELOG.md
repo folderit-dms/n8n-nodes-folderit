@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 — 2026-10-10
+
+- Explicitly leave AI tool support disabled for binary document operations.
+- Remove the inline lint exception so the source passes n8n package scanning.
+
 ## 0.3.0 — 2026-10-10
 
 - Reject startup or leadership changes without a saved polling checkpoint, avoiding silent rebaselining.
