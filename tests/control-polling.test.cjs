@@ -1,7 +1,7 @@
 const {test}=require('node:test');const assert=require('node:assert/strict');
 const {Folderit}=require('../dist/nodes/Folderit/Folderit.node');
 const {FolderitTrigger}=require('../dist/nodes/Folderit/FolderitTrigger.node');
-function ctx(params, respond, state={}) { const calls=[];return {calls,getInputData:()=>[{json:{}}],getNodeParameter:(name,index,fallback)=>params[name]??fallback??(typeof index==='number'?undefined:index),getNode:()=>({name:'Folderit',type:'n8n-nodes-folderit.folderit',typeVersion:1,position:[0,0],parameters:{},credentials:{folderitOAuth2Api:{id:'test'}}}),continueOnFail:()=>false,getMode:()=>params.mode||'trigger',getWorkflowStaticData:()=>state,helpers:{httpRequestWithAuthentication:async(cred,o)=>{calls.push(o);return respond(o)},assertBinaryData:()=>({fileName:'v2.txt',mimeType:'text/plain'}),getBinaryDataBuffer:async()=>Buffer.from('version two'),httpRequest:async()=>({})}};}
+function ctx(params, respond, state={}) { const calls=[];return {calls,getInputData:()=>[{json:{}}],getNodeParameter:(name,index,fallback)=>params[name]??fallback??(typeof index==='number'?undefined:index),getNode:()=>({name:'Folderit',type:'n8n-nodes-folderit.folderit',typeVersion:1,position:[0,0],parameters:{},credentials:{folderitOAuth2Api:{id:'test'}}}),continueOnFail:()=>false,getMode:()=>params.mode||'trigger',getActivationMode:()=>params.activation||'activate',getWorkflowStaticData:()=>state,helpers:{httpRequestWithAuthentication:async(cred,o)=>{calls.push(o);return respond(o)},assertBinaryData:()=>({fileName:'v2.txt',mimeType:'text/plain'}),getBinaryDataBuffer:async()=>Buffer.from('version two'),httpRequest:async()=>({})}};}
 const run=c=>Folderit.prototype.execute.call(c);const poll=c=>FolderitTrigger.prototype.poll.call(c);
 const file={resource:'file',operation:'addVersion',accountUid:'a',fileUid:'file',binaryPropertyName:'data',versionLockId:'held-lock'};
 test('version upload targets existing file and carries lock on create and complete',async()=>{
@@ -69,4 +69,16 @@ test('version enrichment follows history pages and refuses a missing version wit
 });
 test('poll budget exhaustion preserves state before any request',async()=>{
  const state={};const c=ctx(params,()=>{throw Error('must not call')},state);c.getPollBudgetMs=()=>1;await assert.rejects(poll(c),/time limit/);assert.equal(c.calls.length,0);assert.deepEqual(state,{});
+});
+
+test('restart without a durable baseline fails closed before API access',async()=>{
+ for(const activation of ['init','leadershipChange']) {
+  const state={};const c=ctx({...params,activation},()=>{throw Error('must not call')},state);
+  await assert.rejects(poll(c),/No saved Folderit checkpoint/);assert.deepEqual(state,{});assert.equal(c.calls.length,0);
+ }
+});
+test('restart with a saved baseline catches up instead of rebaselining',async()=>{
+ const state={};await poll(ctx(params,()=>[entry(10)],state));
+ const [out]=await poll(ctx({...params,activation:'init'},()=>[entry(11),entry(10)],state));
+ assert.equal(out[0].json.auditId,'11');assert.equal(state.cursor,'11');
 });
