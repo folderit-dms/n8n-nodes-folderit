@@ -78,6 +78,11 @@ export async function pollEvents(context: IPollFunctions): Promise<INodeExecutio
 		context.getNode().credentials?.folderitOAuth2Api?.id ?? '',
 	]);
 	const seeded = state.scope === scope && typeof state.cursor === 'string';
+	const activation = context.getActivationMode();
+	if (!manual && !seeded && ['init', 'leadershipChange'].includes(activation))
+		throw new UserError(
+			'No saved Folderit checkpoint is available after restart. Reconcile events since activation before reactivating this trigger. Use n8n durable poll cursors to persist quiet polls.',
+		);
 	const started = Date.now();
 	// This endpoint defaults to the last day. Refuse an unsafe catch-up beyond that window.
 	if (
