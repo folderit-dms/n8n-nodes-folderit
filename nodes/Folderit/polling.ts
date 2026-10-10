@@ -88,7 +88,7 @@ export async function pollEvents(context: IPollFunctions): Promise<INodeExecutio
 		throw new UserError(
 			'Polling was interrupted for over 23 hours. Reconcile missed events before resetting this trigger checkpoint.',
 		);
-	const previous = seeded ? auditId(state.cursor) : 0n;
+	const previous = seeded ? auditId(state.cursor) : BigInt(0);
 	let newest = previous;
 	const seen = new Set<string>();
 	const pending: IDataObject[] = [];
