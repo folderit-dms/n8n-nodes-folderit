@@ -226,6 +226,22 @@ const properties: INodeProperties[] = [
 	...controlProperties,
 ];
 
+const binaryOperations = new Set(['upload', 'addVersion', 'download']);
+const toolAwareProperties = properties.flatMap((property): INodeProperties[] => {
+	if (property.name !== 'operation' || property.displayOptions?.show?.resource?.[0] !== 'file')
+		return [property];
+	return [
+		{ ...property, displayOptions: { show: { resource: ['file'], '@tool': [false] } } },
+		{
+			...property,
+			displayOptions: { show: { resource: ['file'], '@tool': [true] } },
+			options: property.options?.filter(
+				(option) => 'value' in option && !binaryOperations.has(String(option.value)),
+			),
+		},
+	];
+});
+
 // Signed storage URLs never receive the Folderit OAuth credentials.
 export function validateUploadUrl(value: unknown): string {
 	if (typeof value !== 'string') throw new UserError('Folderit did not return an upload URL.');
@@ -254,12 +270,12 @@ export class Folderit implements INodeType {
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Manage documents and folders in Folderit',
 		defaults: { name: 'Folderit' },
-		// Binary uploads require main-input binary data, which AI tools cannot supply.
-		usableAsTool: undefined,
+		// JSON operations work as tools; binary operations remain in normal workflows.
+		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'folderitOAuth2Api', required: true }],
-		properties,
+		properties: toolAwareProperties,
 	};
 
 	methods = { loadOptions: { ...loadOptions, getWorkflows } };
@@ -272,6 +288,14 @@ export class Folderit implements INodeType {
 				const account = validateUid(get('accountUid'));
 				const resource = get('resource');
 				const operation = get('operation');
+				if (
+					this.getNode().type.endsWith('Tool') &&
+					resource === 'file' &&
+					binaryOperations.has(operation)
+				)
+					throw new UserError(
+						'Binary file operations require a normal Folderit workflow node, not an AI tool.',
+					);
 				let results: IDataObject[];
 				if (resource === 'metadata') {
 					results = await executeMetadata(this, account, operation, i);
