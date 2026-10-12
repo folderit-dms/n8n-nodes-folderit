@@ -76,3 +76,11 @@ Remaining verification gates
 - No AI-provider API key, mocked tool call or pinned output was used.
 - Windows instructions include local model setup and the same public workflow.
   Windows runtime performance must be checked in the recorder's practice run.
+
+0.4.0 public release verified (2026-10-12)
+- GitHub source 0abd340f62be22c7b8f145bfb394252e671ad8fb.
+- Release run 38228293407 passed; maintainer 2FA approved publication.
+- Public npm SHA1 c132c34d40ff06dc2d1e82dfc8e2f03d98702ce9 matches
+  the tested archive and the archive included in the Windows handoff.
+- Official public scanner 0.38.0 passed provenance, source and distribution.
+- Complete live AI demonstration also passed through the n8n browser editor.
