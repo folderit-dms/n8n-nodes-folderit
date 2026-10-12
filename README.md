@@ -36,6 +36,16 @@ Credentials belong in n8n's credential store. Never put them in workflow JSON, t
 
 **Search and read metadata:** import [search-and-read-metadata.json](examples/search-and-read-metadata.json), fill Search Settings and select your credential in both Folderit nodes. Search returns one item per matching document; metadata reads return one item per assigned field. No matches or no assigned metadata return no output items.
 
+## AI-agent tools (0.4.0)
+
+Connect **Folderit** to an **AI Agent** node's Tool input. Select a resource, operation and credential; keep the account and any required scope fixed. Use n8n's **Let the model define this parameter** control only for values the agent should supply. Each tool performs the operation you configure. Use a read operation for a read-only assistant; do not give an agent a write operation unless you intend to allow it.
+
+File Upload, Add Version and Download require binary workflow data and are excluded from the tool operation menu. They also fail before any API call if forced into a tool through edited workflow JSON. Use ordinary Folderit nodes for these actions.
+
+Import [document-roundtrip-with-ai.json](examples/document-roundtrip-with-ai.json) for a complete demonstration. Fill the two UIDs in Test Settings and select your Folderit credential in all five Folderit nodes. Install [Ollama](https://ollama.com/download), run `ollama pull qwen3.5:4b`, and select an Ollama credential with Base URL `http://127.0.0.1:11434` in Ollama Chat Model. No AI API key is needed when both apps run directly on the same computer. Docker/remote hosts need their own reachable Ollama address.
+
+The workflow uploads synthetic text, retrieves and downloads it, then asks the AI Agent to retrieve the new document's details through its Folderit tool. Check `downloadedText`, then the AI Agent's `intermediateSteps` tool input/result and final name/UID. The local model is about 3.3 GB; download before recording. Execution time depends on hardware. On 2026-10-12 the complete workflow passed on n8n 2.42.5 with Ollama qwen3.5:4b: a real tool call used the uploaded UID, returned matching details, and the downloaded text matched exactly. No output was pinned or mocked.
+
 ## Search and typed metadata
 
 File and Folder Search support a query, selectable search fields, parent-folder, extension and document-number filters. At least one query/filter is required. Results use the server's `searchAfter` cursor with UID as a tie-breaker. Limits are 10,000 results and 100 pages; a capped Return All operation fails explicitly rather than silently truncating.
@@ -97,7 +107,7 @@ If Folderit rejects a request, confirm the account UID, permissions and node inp
 
 ## Validation status
 
-TypeScript build, n8n lint and 43 automated tests pass. On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
+TypeScript build, n8n lint and 46 automated tests pass. On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
 
 Version 0.2.0 passed native document search, integer metadata write/readback, unchanged-value suppression and clear verification. A separate live read confirmed cleanup. Account/folder/metadata picker calls and folder search passed through the live helper harness. Other metadata types have contract tests but have not all been exercised in live n8n workflows.
 
@@ -113,7 +123,7 @@ Public npm package: [n8n-nodes-folderit 0.3.1](https://www.npmjs.com/package/n8n
 
 Version 0.3.0 was built and staged by the included GitHub Actions workflow using npm trusted publishing and provenance, then approved by the maintainer with 2FA. [Release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38058519315) · [Provenance](https://search.sigstore.dev/?logIndex=3187253309).
 
-Version 0.3.1 explicitly leaves AI tool support disabled because document upload operations need binary workflow inputs. Its source and packaged files pass the official scanner, including provenance verification. [Patch release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38060180424).
+Version 0.3.1 did not expose Folderit as an AI tool. Version 0.4.0 adds native AI-tool support for JSON operations while keeping binary upload, add-version and download operations in normal workflow nodes. Its source and packaged files pass the official scanner, including provenance verification. [Patch release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38060180424).
 
 The package passed automated review in https://creators.n8n.io/nodes and now requires a demo video before manual review. n8n decides approval; npm publication alone does not make the connector available in n8n Cloud.
 

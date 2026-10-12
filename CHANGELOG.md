@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 — 2026-10-12
+
+- Enable Folderit JSON actions as native n8n AI-agent tools.
+- Hide binary upload, version-upload and download actions in the tool picker and reject them before API access in tool execution.
+- Preserve all existing operations in normal workflows.
+
 ## 0.3.1 — 2026-10-10
 
 - Explicitly leave AI tool support disabled for binary document operations.

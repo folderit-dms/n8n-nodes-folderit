@@ -65,3 +65,14 @@ Remaining verification gates
   self-hosted runtime/configuration has been tested.
 - API access is documented as a Folderit Tailor-plan feature; administrators
   must confirm their actual account access and permissions.
+
+0.4.0 AI-agent verification (2026-10-12)
+- Native usableAsTool support; binary actions hidden in tool mode and rejected
+  before API calls if forced through edited JSON.
+- Build, official lint and all 46 tests pass.
+- Native n8n 2.42.5 with Ollama qwen3.5:4b completed upload/download plus
+  AI Agent -> Folderit Document Details in 31.8 seconds. Exact downloaded text,
+  tool argument UID, tool result UID/name and final response matched.
+- No AI-provider API key, mocked tool call or pinned output was used.
+- Windows instructions include local model setup and the same public workflow.
+  Windows runtime performance must be checked in the recorder's practice run.
