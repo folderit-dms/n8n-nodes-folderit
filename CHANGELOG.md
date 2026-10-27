@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1 — 2026-10-27
+
+- Record n8n verification and Cloud publication; link the customer setup guide.
+- Include three inactive, credential-free starter workflows for attachment archiving, Slack notifications and read-only AI lookup.
+- Add setup, permissions, recovery and platform limitations to each workflow.
+- No changes to connector runtime operations.
+
 ## 0.4.0 — 2026-10-12
 
 - Enable Folderit JSON actions as native n8n AI-agent tools.
