@@ -1,0 +1,1142 @@
+{
+  "name": "Folderit — New document notifications in Microsoft Teams",
+  "nodes": [
+    {
+      "id": "a3c90e18-7497-5132-b0cd-c02728e2f50a",
+      "name": "New Folderit file",
+      "type": "n8n-nodes-folderit.folderitTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "accountUid": "",
+        "event": "newFile",
+        "recordUid": "",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e8a0410f-539a-5e9e-a16d-6c9876d2bf53",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"accountUid\": \"YOUR_ACCOUNT_UID\",\n  \"folderUid\": \"\",\n  \"ledgerTableId\": \"YOUR_LEDGER_TABLE_ID\",\n  \"teamId\": \"YOUR_TEAM_ID\",\n  \"channelId\": \"YOUR_CHANNEL_ID\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "1ede5c28-8799-544c-aef0-aca98f6a9732",
+      "name": "Read new document details",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        480,
+        400
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "accountUid": "={{ $('Settings').first().json.accountUid }}",
+        "fileUid": "={{ $('New Folderit file').item.json.entityUid }}"
+      }
+    },
+    {
+      "id": "a4c08ab9-ae9c-5b77-aa55-1bc494961a15",
+      "name": "Prepare arrival notifications",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const cfg=$('Settings').first().json;\nfor(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);\nconst events=$('New Folderit file').all();const seen=new Set();const out=[];\nfor(const [i,item]of $input.all().entries()){\n const e=events[i]?.json;if(!e?.auditUid||e.entityUid!==item.json.uid)throw new Error('File details do not match the audit event.');\n if(seen.has(e.auditUid))continue;seen.add(e.auditUid);if(cfg.folderUid&&item.json.folderUid!==cfg.folderUid)continue;\n const name=String(item.json.name||'').replace(/[\\r\\n]/g,' ');\n out.push({json:{receiptKey:JSON.stringify(['teams-arrival-v1',cfg.accountUid,e.auditUid,cfg.teamId,cfg.channelId]),sourceRef:e.auditUid,notificationText:`New document in Folderit: ${name}\\nDocument UID: ${item.json.uid}\\nAudit UID: ${e.auditUid}`},pairedItem:{item:i}});\n}return out;"
+      }
+    },
+    {
+      "id": "f6183266-b5c0-5818-9420-f65b50fd8a6d",
+      "name": "Process one item",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1020,
+        760
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "0a9b266d-8af0-5c12-bdf3-8b7e34d106f1",
+      "name": "Read processing lock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1020,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "__mutex__"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 2
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "2e755972-d625-5692-a0f3-57b3277b36df",
+      "name": "Check lock record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1260,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "if (!$execution.id) throw new Error('No execution identity is available; processing was stopped before locking.');\nconst rows = $input.all().filter(x => x.json.id !== undefined);\nif (rows.length !== 1 || rows[0].json.sourceRef !== 'folderit-ledger/v1') throw new Error('Ledger lock is missing, duplicated or has the wrong schema. Run the setup workflow once and inspect the table.');\nreturn rows;"
+      }
+    },
+    {
+      "id": "4322bfd9-83a7-5816-9c0e-9ab9164688a1",
+      "name": "Acquire processing lock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1500,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            },
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "__mutex__"
+            },
+            {
+              "keyName": "state",
+              "condition": "eq",
+              "keyValue": "free"
+            },
+            {
+              "keyName": "owner",
+              "condition": "eq",
+              "keyValue": ""
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "state": "held",
+            "owner": "={{ String($execution.id) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "payloadHash",
+              "displayName": "payloadHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetUid",
+              "displayName": "targetUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sourceRef",
+              "displayName": "sourceRef",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "7147bbd9-cf3b-5270-b35c-e10e41ff6995",
+      "name": "Confirm lock ownership",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().filter(x => x.json.id !== undefined);\nif (rows.length !== 1 || rows[0].json.owner !== String($execution.id) || rows[0].json.state !== 'held') throw new Error('Another run owns the processing lock. No destination write was attempted by this run. Retain this failed input and retry after the owner completes.');\nreturn rows;"
+      }
+    },
+    {
+      "id": "3e22d871-7602-5dad-94ea-23eb25fa7a30",
+      "name": "Find processing receipt",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "={{ $('Process one item').item.json.receiptKey }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 2
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "efa03e10-a9c3-5990-8b85-387f22dee1db",
+      "name": "Decide whether to process",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $('Process one item').item;\nconst rows = $input.all().filter(x => x.json.id !== undefined);\nif (rows.length > 1) throw new Error('Duplicate ledger keys need reconciliation. No destination write was attempted.');\nif (rows.length === 1) {\n  const receipt = rows[0].json;\n  if (receipt.key !== item.json.receiptKey || (item.json.payloadHash && receipt.payloadHash !== item.json.payloadHash)) throw new Error('The receipt does not match this work item. Inspect before continuing.');\n  if (receipt.state !== 'done' || !receipt.targetUid) throw new Error('A prior attempt is unresolved. Inspect the receipt, its owner execution and the destination before clearing the processing lock. Do not repeat the write.');\n  return [{json: {...item.json, route: 'done', targetUid: receipt.targetUid, receiptRowId: receipt.id}, binary: item.binary, pairedItem: {item: 0}}];\n}\nreturn [{json: {...item.json, route: 'new'}, binary: item.binary, pairedItem: {item: 0}}];"
+      }
+    },
+    {
+      "id": "cec32330-9389-53df-a279-5b712150881c",
+      "name": "Already completed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2460,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4cbebcf2-de28-5c58-a354-57ffc0853b37",
+              "leftValue": "={{ $json.route }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b25d55df-4a20-5cb6-97ae-bdeb26ea4202",
+      "name": "Record pending attempt",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2700,
+        540
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": []
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "={{ $json.receiptKey }}",
+            "state": "pending",
+            "owner": "={{ String($execution.id) }}",
+            "payloadHash": "={{ $json.payloadHash || \"\" }}",
+            "targetUid": "",
+            "sourceRef": "={{ $json.sourceRef }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "payloadHash",
+              "displayName": "payloadHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetUid",
+              "displayName": "targetUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sourceRef",
+              "displayName": "sourceRef",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "59c48a70-40a0-52eb-8bcd-86621afb1a44",
+      "name": "Restore work item",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2940,
+        540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().filter(x => x.json.id !== undefined);\nconst source = $('Process one item').item;\nif (rows.length !== 1 || rows[0].json.state !== 'pending' || rows[0].json.owner !== String($execution.id) || rows[0].json.key !== source.json.receiptKey) throw new Error('Pending receipt was not saved as expected. No destination write was attempted.');\nreturn [{json: {...source.json, receiptRowId: rows[0].json.id}, binary: source.binary, pairedItem: {item: 0}}];"
+      }
+    },
+    {
+      "id": "9c6aae81-cdce-510d-8311-cd4a33defbde",
+      "name": "Send Teams notification",
+      "type": "n8n-nodes-base.microsoftTeams",
+      "typeVersion": 2,
+      "position": [
+        3180,
+        540
+      ],
+      "parameters": {
+        "authentication": "microsoftTeamsOAuth2Api",
+        "resource": "channelMessage",
+        "operation": "create",
+        "teamId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.teamId }}"
+        },
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.channelId }}"
+        },
+        "contentType": "text",
+        "message": "={{ $json.notificationText }}",
+        "options": {
+          "includeLinkToWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "7d969ca1-918c-5654-8ec1-163eefe225f1",
+      "name": "Verify destination result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3660,
+        540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const expected=$('Restore work item').item.json; const result=$input.first().json;\nif(!result.id || typeof result.id!=='string')throw new Error('No Teams message ID was returned. Inspect the channel before repeating this notification.');\nreturn [{json:{receiptRowId:expected.receiptRowId,targetUid:result.id},pairedItem:{item:0}}];"
+      }
+    },
+    {
+      "id": "0d633a2a-a568-5a6f-912d-57f2b98e6c5a",
+      "name": "Save completed receipt",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3900,
+        540
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.receiptRowId }}"
+            },
+            {
+              "keyName": "state",
+              "condition": "eq",
+              "keyValue": "pending"
+            },
+            {
+              "keyName": "owner",
+              "condition": "eq",
+              "keyValue": "={{ String($execution.id) }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "state": "done",
+            "targetUid": "={{ $json.targetUid }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "payloadHash",
+              "displayName": "payloadHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetUid",
+              "displayName": "targetUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sourceRef",
+              "displayName": "sourceRef",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "4ad25a7e-8fc6-51ae-9296-cc7ad166a3f5",
+      "name": "Confirm completed receipt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4140,
+        540
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().filter(x => x.json.id !== undefined);\nconst expected = $('Verify destination result').item.json;\nif (rows.length !== 1 || rows[0].json.state !== 'done' || rows[0].json.targetUid !== expected.targetUid || rows[0].json.owner !== String($execution.id)) throw new Error('The destination action succeeded but its receipt could not be confirmed. Inspect before retrying.');\nreturn [{json: {status: 'completed', targetUid: rows[0].json.targetUid, receiptKey: rows[0].json.key}, pairedItem: {item: 0}}];"
+      }
+    },
+    {
+      "id": "fa98758b-2716-5d00-abed-681cacbb3598",
+      "name": "Report previous completion",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2700,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json: {status: 'previously_completed', targetUid: $json.targetUid, receiptKey: $json.receiptKey}}];"
+      }
+    },
+    {
+      "id": "615fba51-7cde-5e18-a55c-ea1286976091",
+      "name": "Release processing lock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4380,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Settings').first().json.ledgerTableId }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "__mutex__"
+            },
+            {
+              "keyName": "state",
+              "condition": "eq",
+              "keyValue": "held"
+            },
+            {
+              "keyName": "owner",
+              "condition": "eq",
+              "keyValue": "={{ String($execution.id) }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "state": "free",
+            "owner": ""
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "payloadHash",
+              "displayName": "payloadHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetUid",
+              "displayName": "targetUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sourceRef",
+              "displayName": "sourceRef",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "6a70a012-865c-5cfc-b8e6-ea0622166211",
+      "name": "Confirm lock released",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4620,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows = $input.all().filter(x => x.json.id !== undefined);\nif (rows.length !== 1 || rows[0].json.state !== 'free' || rows[0].json.owner !== '' || rows[0].json.key !== '__mutex__') throw new Error('Could not confirm processing lock release. Inspect the table and owner execution.');\nreturn [{json: {lockReleased: true}}];"
+      }
+    },
+    {
+      "id": "c0f7cc45-2db0-5743-9904-c5d33c970a36",
+      "name": "Lock acquired?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1620,
+        120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c9d86557-7b3e-5ec8-9f8c-b5aa11e12ecc",
+              "leftValue": "={{ ($json.owner === String($execution.id) && $json.state === 'held') ? 'yes' : 'no' }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "20c3c1b8-ea8c-5b2a-ba71-c70303fb71a7",
+      "name": "Limit lock waiting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        100
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "if ($runIndex >= 11) throw new Error('Processing lock is still busy after bounded waiting. No destination action was repeated. Retain this failed input and inspect the owner execution.'); return [{json:{waitingForLock:true},pairedItem:{item:0}}];"
+      }
+    },
+    {
+      "id": "6fcf15c5-f13c-5c85-9b70-db2617045795",
+      "name": "Wait before checking lock",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        100
+      ],
+      "parameters": {
+        "amount": 5,
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "3a900888-4f1a-511e-8b50-555980248ef9",
+      "name": "Guide: New Folderit files → Microsoft Teams",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -170
+      ],
+      "parameters": {
+        "content": "# New Folderit files → Microsoft Teams\nFor **Folderit Tailor-plan users** with API credentials. Requires an n8n release with Data Table node v1.1; tested runtime: n8n 2.42.5. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit credential in Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.",
+        "width": 1100,
+        "height": 650
+      }
+    },
+    {
+      "id": "a6c272ed-6121-5617-8548-df31cde21c59",
+      "name": "Guide: Activation, recovery and limits",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        -170
+      ],
+      "parameters": {
+        "content": "# Activation, recovery and limits\nThe table contains a single processing lock plus durable receipts. Only a run owning the lock may perform an upload or send a message. A completed receipt suppresses repeats for its key. The lock has NO automatic expiry: a crash, failed readback or uncertain API response keeps work blocked for inspection.\n\nCompeting runs wait and retry lock acquisition for about one minute; uploads/messages are never automatically retried. If a run still reports a busy lock, retry that FAILED execution after the owner finishes. Do not discard its input. On other failures, inspect saved executions, receipt state and the actual destination. Never clear the lock while its owner may still be running. Reconcile pending rows before clearing it. See CUSTOMER-WORKFLOWS.md for recovery steps.\n\nThis is duplicate protection with explicit recovery, not an exactly-once guarantee across n8n and an external service. Keep failed execution/binary data long enough for recovery and monitor the failure-alert workflow itself. Production provider delivery and fresh Cloud behavior require validation in your environment.\n\nActivate, then upload a synthetic document and inspect the actual Teams channel. Activation starts a baseline. Manual previews can notify about historical events. Poll at least hourly; interruptions over 23 hours or scan-limit errors need reconciliation. The ledger suppresses repeated audit UID/destination pairs; it does not repair missing audit history.",
+        "width": 1050,
+        "height": 650
+      }
+    }
+  ],
+  "connections": {
+    "New Folderit file": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Read new document details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read new document details": {
+      "main": [
+        [
+          {
+            "node": "Prepare arrival notifications",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare arrival notifications": {
+      "main": [
+        [
+          {
+            "node": "Process one item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process one item": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Read processing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read processing lock": {
+      "main": [
+        [
+          {
+            "node": "Check lock record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check lock record": {
+      "main": [
+        [
+          {
+            "node": "Acquire processing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Acquire processing lock": {
+      "main": [
+        [
+          {
+            "node": "Lock acquired?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm lock ownership": {
+      "main": [
+        [
+          {
+            "node": "Find processing receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find processing receipt": {
+      "main": [
+        [
+          {
+            "node": "Decide whether to process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide whether to process": {
+      "main": [
+        [
+          {
+            "node": "Already completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock acquired?": {
+      "main": [
+        [
+          {
+            "node": "Confirm lock ownership",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Limit lock waiting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit lock waiting": {
+      "main": [
+        [
+          {
+            "node": "Wait before checking lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait before checking lock": {
+      "main": [
+        [
+          {
+            "node": "Read processing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Already completed?": {
+      "main": [
+        [
+          {
+            "node": "Report previous completion",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record pending attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record pending attempt": {
+      "main": [
+        [
+          {
+            "node": "Restore work item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore work item": {
+      "main": [
+        [
+          {
+            "node": "Send Teams notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Teams notification": {
+      "main": [
+        [
+          {
+            "node": "Verify destination result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify destination result": {
+      "main": [
+        [
+          {
+            "node": "Save completed receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save completed receipt": {
+      "main": [
+        [
+          {
+            "node": "Confirm completed receipt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm completed receipt": {
+      "main": [
+        [
+          {
+            "node": "Release processing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Release processing lock": {
+      "main": [
+        [
+          {
+            "node": "Confirm lock released",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report previous completion": {
+      "main": [
+        [
+          {
+            "node": "Release processing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm lock released": {
+      "main": [
+        [
+          {
+            "node": "Process one item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true
+  },
+  "pinData": {}
+}
