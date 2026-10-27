@@ -1,3 +1,16 @@
+Folderit n8n publication update — 2026-10-27
+
+n8n approved and published version 0.4.0 as a verified community node,
+including on n8n Cloud. Customer guide:
+https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/
+
+Fresh Cloud-instance acceptance remains outstanding. Historical local tests
+below do not prove Cloud polling persistence. New starter workflows include
+setup, permission and recovery notes; IMAP and Slack delivery still need
+end-to-end validation before template-library submission.
+
+Historical release evidence follows.
+
 Folderit n8n 0.3.1 - published, 2026-10-10
 
 Verified locally
@@ -57,12 +70,12 @@ Public release verified
 - Resubmitted to n8n Creator Portal after maintainer-approved publication.
 - Native registry download test returned exact expected 80-byte UTF-8 content.
 
-Remaining verification gates
-- n8n automated review passed. Manual Review Awaiting Video is the current
-  portal status. Supply an uncut demo of five minutes or less, then submit
-  for manual review. Verification and Cloud availability are not yet approved.
-- Confirm Cloud polling compatibility during n8n review; only the documented
-  self-hosted runtime/configuration has been tested.
+Current verification gates
+- n8n verification is complete as of 2026-10-27.
+- Independently test the documented customer flows in a fresh Cloud instance,
+  including scheduled polling and restart behavior where accessible.
+- Complete real-mailbox and real-channel tests before submitting the email
+  and notification workflows to n8n's template library.
 - API access is documented as a Folderit Tailor-plan feature; administrators
   must confirm their actual account access and permissions.
 
