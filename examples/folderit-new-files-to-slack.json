@@ -1,1 +1,180 @@
-
+{
+  "name": "Notify a Slack channel when documents arrive in Folderit",
+  "nodes": [
+    {
+      "id": "3a7b5452-0c8e-4425-a7b0-78c3816d3a58",
+      "name": "New Folderit file",
+      "type": "n8n-nodes-folderit.folderitTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        360
+      ],
+      "parameters": {
+        "accountUid": "",
+        "event": "newFile",
+        "recordUid": "",
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7cd4e471-3344-4db5-9cc1-fb3994661350",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        360
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"accountUid\": \"YOUR_ACCOUNT_UID\",\n  \"folderUid\": \"\",\n  \"slackChannelId\": \"YOUR_SLACK_CHANNEL_ID\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "5e4f49e9-709e-4734-a095-460215e2626f",
+      "name": "Read new document details",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        520,
+        360
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "accountUid": "={{ $('Settings').first().json.accountUid }}",
+        "fileUid": "={{ $('New Folderit file').item.json.entityUid }}"
+      }
+    },
+    {
+      "id": "3fe01a34-2da1-4c99-b84a-6d157dd31840",
+      "name": "Filter folder and format notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const cfg = $('Settings').first().json;\nif (!cfg.slackChannelId || cfg.slackChannelId.startsWith('YOUR_')) throw new Error('Set slackChannelId in Settings.');\nconst events = $('New Folderit file').all();\nconst seen = new Set();\nconst escape = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst out = [];\nfor (const [i, item] of $input.all().entries()) {\n  const event = events[i]?.json;\n  if (!event?.auditUid || !event.entityUid || event.entityUid !== item.json.uid) throw new Error('Document and audit event do not match. Inspect this execution.');\n  if (seen.has(event.auditUid)) continue;\n  seen.add(event.auditUid);\n  if (cfg.folderUid && item.json.folderUid !== cfg.folderUid) continue;\n  out.push({json: {auditUid: event.auditUid, fileUid: item.json.uid, fileName: item.json.name, slackChannelId: cfg.slackChannelId, text: `New document in Folderit: ${escape(item.json.name)}\\nDocument UID: ${escape(item.json.uid)}\\nAudit UID: ${escape(event.auditUid)}`}, pairedItem: {item: i}});\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "ab33069d-fe51-4fa7-81a2-20fbe081475c",
+      "name": "Notify Slack channel",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1060,
+        360
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "post",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.slackChannelId }}"
+        },
+        "messageType": "text",
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": false
+        }
+      }
+    },
+    {
+      "id": "71046383-a637-404f-928a-d02625c8b1ac",
+      "name": "Setup: Notify Slack about new Folderit files",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -80
+      ],
+      "parameters": {
+        "content": "# Notify Slack about new Folderit files\nFor teams that need document arrival notifications. Retrieves current file details, optionally limits messages to one exact parent folder, escapes Slack mentions, and includes the audit UID for reconciliation. No document content is sent.\n\n1. Install **n8n-nodes-folderit 0.4.0 or later**. [Setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n2. Select the Folderit OAuth2 credential and account in **New Folderit file**. Select the same credential in **Read new document details**.\n3. In **Settings**, enter the same account UID and the Slack channel ID; optionally enter the exact folder UID. A blank folder means all accessible folders. Child folders are not included in an exact folder filter.\n4. Connect a Slack OAuth2 credential in **Notify Slack channel** and invite the app to that channel. Test with a private test channel before activation.",
+        "width": 520,
+        "height": 430
+      }
+    },
+    {
+      "id": "e5bd7dc5-762a-465d-83ba-f27565770783",
+      "name": "Setup: Scheduling and delivery limits",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        -80
+      ],
+      "parameters": {
+        "content": "# Scheduling and delivery limits\nActivation establishes a new baseline. Upload a synthetic file AFTER activation, wait for a scheduled poll, and check the actual Slack message. Manual trigger tests preview recent events and can send historical notifications.\n\nThe trigger is polled every minute. Poll at least hourly; reconcile any interruption longer than 23 hours or an exceeded scan limit. Quiet polling persistence was tested locally on n8n 2.42.5 with durable polling enabled; a fresh Cloud run remains unverified.\n\nDuplicate audit UIDs are removed within one execution. This is not a durable cross-execution ledger or exactly-once delivery. Downstream failures/replays can repeat messages. An uncertain Slack response needs a channel check before retrying. A deleted/inaccessible file stops execution; inspect and reconcile the event rather than silently discarding it.\n\nFor Microsoft Teams, replace only the final Slack node with Microsoft Teams / Channel Message / Create and map its message to the prepared text. Teams needs its own credential, team/channel and a separate end-to-end test.",
+        "width": 650,
+        "height": 430
+      }
+    }
+  ],
+  "connections": {
+    "New Folderit file": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Read new document details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read new document details": {
+      "main": [
+        [
+          {
+            "node": "Filter folder and format notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter folder and format notification": {
+      "main": [
+        [
+          {
+            "node": "Notify Slack channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
