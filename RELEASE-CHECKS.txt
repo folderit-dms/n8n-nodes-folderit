@@ -4,10 +4,20 @@ n8n approved and published version 0.4.0 as a verified community node,
 including on n8n Cloud. Customer guide:
 https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/
 
-Fresh Cloud-instance acceptance remains outstanding. Historical local tests
-below do not prove Cloud polling persistence. New starter workflows include
-setup, permission and recovery notes; IMAP and Slack delivery still need
-end-to-end validation before template-library submission.
+Fresh Cloud 2.45.4 installed verified Folderit 0.4.0 and passed a real
+folder/upload/read/download round trip on 2026-10-27. An independent
+download matched the exact 75-byte UTF-8 content. Data Table setup and
+same-table reuse passed there. Cloud scheduled polling/restart persistence
+and real provider delivery remain separate acceptance checks.
+
+Six newer customer examples add persistent receipts, conditional locking,
+byte verification, Teams arrival/expiry notices and shared failure alerts.
+Native 2.42.5 tests verified repeat/concurrent uploads, pending protection
+across restart, manual recovery, real Folderit arrivals and expiry records.
+Teams transport was stubbed; Error Trigger delivered to a local SMTP sink.
+Build, official lint and all 61 tests passed in a clean source copy.
+Real IMAP/Outlook/Teams/external SMTP delivery remains unverified; examples
+are not yet submitted to n8n template-library review.
 
 Historical release evidence follows.
 
@@ -74,6 +84,7 @@ Current verification gates
 - n8n verification is complete as of 2026-10-27.
 - Independently test the documented customer flows in a fresh Cloud instance,
   including scheduled polling and restart behavior where accessible.
+  Fresh Cloud round-trip and Data Table setup checks are now complete.
 - Complete real-mailbox and real-channel tests before submitting the email
   and notification workflows to n8n's template library.
 - API access is documented as a Folderit Tailor-plan feature; administrators

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased customer workflow examples
+
+- Add IMAP/Outlook attachment archiving with persistent receipts, a shared processing lock and actual downloaded-byte verification.
+- Add Microsoft Teams arrival notices and document Due-date reminder workflows.
+- Add one-time Data Table setup, shared SMTP failure alerts and operator recovery instructions.
+- Add 15 tests covering workflow exports and their processing rules. No connector runtime changes.
+
 ## 0.4.1 — 2026-10-27
 
 - Record n8n verification and Cloud publication; link the customer setup guide.

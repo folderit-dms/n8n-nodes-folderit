@@ -37,7 +37,15 @@ Credentials belong in n8n's credential store. Never put them in workflow JSON, t
 
 ## Example workflows
 
-Three downloadable starter workflows include setup notes and configurable placeholders. They import inactive and contain no saved credentials or pinned results. Configure and test them in your own instance before activation; they are not yet published in n8n's template library.
+For **Folderit Tailor-plan users**, the [customer workflow guide](CUSTOMER-WORKFLOWS.md) provides six inactive, credential-free exports:
+
+- IMAP and Outlook attachment archiving with saved receipts, SHA-256 verification of downloaded bytes and protection against overlapping runs.
+- New-document notifications and Due-date reminders in Microsoft Teams.
+- Shared failure emails and one-time receipt-table setup.
+
+These use n8n Data Tables and require your own mailbox, Teams and SMTP connections. Read the setup and recovery instructions before activation. An uncertain external result holds processing for inspection; there are no automatic upload/message retries. They are downloadable examples, not listings in n8n's template library.
+
+The three simpler starters remain available for learning. Three downloadable starter workflows include setup notes and configurable placeholders. They import inactive and contain no saved credentials or pinned results. Configure and test them in your own instance before activation; they are not yet published in n8n's template library.
 
 - [Archive email attachments in Folderit](examples/email-attachments-to-folderit.json): split and filter attachments, upload them and verify the stored file details. Configure IMAP and Folderit credentials. Replays can create duplicates; recovery instructions are included.
 - [Notify Slack about new Folderit files](examples/folderit-new-files-to-slack.json): poll for file arrivals, read current details, optionally filter one parent folder and send a notification with the audit UID. Includes instructions for adapting the final action to Microsoft Teams. Cross-execution deduplication is a separate production concern.
@@ -124,7 +132,7 @@ If Folderit rejects a request, confirm the account UID, permissions and node inp
 
 ## Validation status
 
-TypeScript build, n8n lint and 46 automated tests pass. On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
+TypeScript build and n8n lint pass. All 61 tests pass: 46 connector tests and 15 customer-workflow tests. On 2026-10-27, fresh n8n Cloud 2.45.4 installed verified Folderit 0.4.0 and completed a real 75-byte UTF-8 folder/upload/read/download test with independent byte verification. Receipt-table setup also passed on Cloud. Native 2.42.5 tests covered repeated/overlapping synthetic uploads, interrupted-result blocking across restart, manual recovery, actual scheduled Folderit arrivals, expiry receipts and Error Trigger delivery to a local SMTP sink. Teams transport was stubbed; real mailbox/channel delivery remains to be validated. See [customer-workflow validation and limits](CUSTOMER-WORKFLOWS.md#validation-completed-on-27-october-2026). On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
 
 Version 0.2.0 passed native document search, integer metadata write/readback, unchanged-value suppression and clear verification. A separate live read confirmed cleanup. Account/folder/metadata picker calls and folder search passed through the live helper harness. Other metadata types have contract tests but have not all been exercised in live n8n workflows.
 
