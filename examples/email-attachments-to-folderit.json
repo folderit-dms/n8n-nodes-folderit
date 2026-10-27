@@ -1,1 +1,193 @@
-
+{
+  "name": "Archive permitted email attachments in Folderit and verify uploads",
+  "nodes": [
+    {
+      "id": "61c3c4b6-b488-4089-84a5-e95913c64007",
+      "name": "New email with attachments",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        360
+      ],
+      "parameters": {
+        "mailbox": "INBOX",
+        "postProcessAction": "nothing",
+        "downloadAttachments": true,
+        "format": "simple",
+        "dataPropertyAttachmentsPrefixName": "attachment_",
+        "options": {
+          "trackLastMessageId": true
+        }
+      }
+    },
+    {
+      "id": "e6d296dc-0d41-463f-ac53-29d108fc8956",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        360
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"accountUid\": \"YOUR_ACCOUNT_UID\",\n  \"folderUid\": \"YOUR_DESTINATION_FOLDER_UID\",\n  \"allowedExtensions\": \"pdf,docx,txt\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "5c599292-52af-4bb2-b25b-9b631eb784d7",
+      "name": "Split and validate attachments",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const cfg = $('Settings').first().json;\nif (!cfg.accountUid || cfg.accountUid.startsWith('YOUR_') || !cfg.folderUid || cfg.folderUid.startsWith('YOUR_')) {\n  throw new Error('Open Settings and replace the Folderit accountUid and folderUid placeholders.');\n}\nconst allowed = String(cfg.allowedExtensions || '').split(',').map(v => v.trim().toLowerCase().replace(/^\\./, '')).filter(Boolean);\nif (!allowed.length) throw new Error('Set allowedExtensions, for example pdf,docx,txt.');\nconst emails = $('New email with attachments').all();\nconst out = [];\nfor (let i = 0; i < emails.length; i++) {\n  const mail = emails[i];\n  for (const [field, binary] of Object.entries(mail.binary || {})) {\n    if (!field.startsWith('attachment_')) continue;\n    const fileName = String(binary.fileName || '').split(/[\\\\/]/).pop().replace(/[\\x00-\\x1f\\x7f]/g, '').trim();\n    const extension = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';\n    if (!fileName || !allowed.includes(extension)) continue;\n    out.push({json: {fileName, sourceAttachment: field, messageId: String(mail.json.messageId || mail.json.uid || ''), accountUid: cfg.accountUid, folderUid: cfg.folderUid}, binary: {data: {...binary, fileName}}, pairedItem: {item: 0}});\n  }\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "a90c97b7-2e6d-431f-a179-f39ebc58ec27",
+      "name": "Archive attachment in Folderit",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        800,
+        360
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "accountUid": "={{ $json.accountUid }}",
+        "folderUid": "={{ $json.folderUid }}",
+        "binaryPropertyName": "data"
+      }
+    },
+    {
+      "id": "58341f85-45ac-4b30-a8c7-abe3246c46fb",
+      "name": "Read uploaded document",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        360
+      ],
+      "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "accountUid": "={{ $('Settings').first().json.accountUid }}",
+        "fileUid": "={{ $json.uid }}"
+      }
+    },
+    {
+      "id": "6d3798e1-9eb4-4392-9f2f-68f6cf2b3ced",
+      "name": "Confirm archived attachment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        360
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all().map((item, i) => {\n  const expected = $('Split and validate attachments').all()[i].json;\n  if (!item.json.uid || item.json.name !== expected.fileName || item.json.folderUid !== expected.folderUid) {\n    throw new Error('Upload readback did not match the attachment. Inspect Folderit before retrying.');\n  }\n  return {json: {archived: true, uid: item.json.uid, name: item.json.name, folderUid: item.json.folderUid, messageId: expected.messageId, sourceAttachment: expected.sourceAttachment}, pairedItem: {item: i}};\n});"
+      }
+    },
+    {
+      "id": "8463254b-45a8-49f0-b0f5-7e07937e6968",
+      "name": "Setup: Archive email attachments in Folderit",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -80
+      ],
+      "parameters": {
+        "content": "# Archive email attachments in Folderit\nFor a document intake mailbox. Splits every permitted attachment into its own item, preserves its binary data, uploads it and reads it back to check the stored name and folder.\n\n1. Install **n8n-nodes-folderit 0.4.0 or later**. [Setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n2. In **New email with attachments**, create/select an IMAP credential with TLS and enter your intake mailbox. Follow your mail provider's app-password/OAuth requirements.\n3. Open **Settings** and replace both UIDs; edit the allowed extensions.\n4. Select a **Folderit OAuth2 API** credential in both Folderit nodes. The API client needs upload and read access to that destination.\n5. Test with one small synthetic attachment and confirm its contents in Folderit before publishing/activating.",
+        "width": 520,
+        "height": 430
+      }
+    },
+    {
+      "id": "3e3d854c-3c03-4021-85cd-83b93e466ef8",
+      "name": "Setup: Processing and recovery",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        610,
+        -80
+      ],
+      "parameters": {
+        "content": "# Processing and recovery\nNo permitted attachments: no upload and no output. Multiple permitted attachments: one upload per file. Folderit rejects empty files and files over 100 MiB. Extension filtering is not malware detection.\n\nThe IMAP cursor tracks new messages; the template leaves read/unread status unchanged. Existing unseen messages may be fetched on first activation: use a dedicated, empty intake mailbox for the first test.\n\nUploads are not automatically retried. A failed execution can leave earlier attachments uploaded; the email cursor is not an archive receipt. Inspect execution history and the destination before retrying, then recover only missing attachments. Replaying a message can create duplicates. Add a durable business ledger if duplicate-free processing is required.\n\nThis template contains no saved credentials or pinned data. IMAP-to-Folderit delivery still needs validation with your mail provider.",
+        "width": 690,
+        "height": 430
+      }
+    }
+  ],
+  "connections": {
+    "New email with attachments": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Split and validate attachments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split and validate attachments": {
+      "main": [
+        [
+          {
+            "node": "Archive attachment in Folderit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive attachment in Folderit": {
+      "main": [
+        [
+          {
+            "node": "Read uploaded document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read uploaded document": {
+      "main": [
+        [
+          {
+            "node": "Confirm archived attachment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
