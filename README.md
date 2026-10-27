@@ -2,7 +2,18 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Release status:** [0.4.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0) with GitHub Actions provenance and passes the official n8n community-package security scanner. It includes native AI-agent tool support. The published archive matches the package used for the live n8n 2.42.5 document round-trip and Ollama AI-tool demonstration. n8n automated review has passed; the manual-review demo video and final approval are pending. Cloud availability is not yet approved. Source repository: [folderit-dms/n8n-nodes-folderit](https://github.com/folderit-dms/n8n-nodes-folderit).
+**Release status:** n8n approved and published Folderit as a verified community node on **27 October 2026**. [Version 0.4.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0), with GitHub Actions provenance and native AI-agent tool support. The approval email confirms n8n Cloud availability. Our own fresh Cloud-instance acceptance test is still outstanding; the validation evidence below identifies the local runtime actually tested.
+
+## Get started
+
+Read the [Folderit n8n setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/) for credentials, installation and a first workflow.
+
+- **n8n Cloud:** as an instance owner or admin, open a workflow, click **+**, search **Folderit**, select it under **More from the community**, and click **Install**. If it is hidden, enable **Verified community nodes** in your Cloud console's **Instance settings**. See [n8n's installation instructions](https://docs.n8n.io/integrations/community-nodes/installation/verified-install/).
+- **Self-hosted n8n:** open your n8n instance's **Settings → Community nodes → Install**, enter `n8n-nodes-folderit`, and install it, subject to your instance settings.
+- In a Folderit node, create a **Folderit OAuth2 API** credential using the client ID and secret supplied by your Folderit administrator. Select your account and destination folder. API access and permissions must be enabled for your Folderit account.
+
+A Creator Portal account is for publishing integrations. It is separate from the n8n Cloud instance where customers run workflows.
+
 
 ## Operations
 
@@ -26,7 +37,13 @@ Credentials belong in n8n's credential store. Never put them in workflow JSON, t
 
 ## Example workflows
 
-**Archive an attachment:** an email node that retrieves binary attachments → Folderit / File / Upload. Set the input binary field to the actual attachment field name and provide the destination folder UID. For several attachments, split them into separate items first.
+Three downloadable starter workflows include setup notes and configurable placeholders. They import inactive and contain no saved credentials or pinned results. Configure and test them in your own instance before activation; they are not yet published in n8n's template library.
+
+- [Archive email attachments in Folderit](examples/email-attachments-to-folderit.json): split and filter attachments, upload them and verify the stored file details. Configure IMAP and Folderit credentials. Replays can create duplicates; recovery instructions are included.
+- [Notify Slack about new Folderit files](examples/folderit-new-files-to-slack.json): poll for file arrivals, read current details, optionally filter one parent folder and send a notification with the audit UID. Includes instructions for adapting the final action to Microsoft Teams. Cross-execution deduplication is a separate production concern.
+- [Read-only AI document lookup](examples/folderit-ai-document-lookup.json): search names in a fixed folder and retrieve details through real Folderit tools. The supplied local Ollama model requires no AI API key. Cloud requires a reachable model provider; `127.0.0.1` on your computer is not reachable from n8n Cloud.
+
+To import a file, download its raw JSON from GitHub, then open an n8n workflow's **⋯** menu and choose **Import from File**. Open the workflow's yellow setup notes before selecting credentials or executing it.
 
 **List a folder:** Manual Trigger → Folderit / File / Get Many. Set the account and folder UIDs, select the credential and execute. Each file becomes a separate output item.
 
@@ -68,7 +85,7 @@ Each output has a stable audit `id`, `auditUid`, sequence `auditId`, `event` and
 
 The trigger reads the account's recent audit log in descending sequence order, scans at most 1,000 audit rows per poll, and emits new matching events oldest first. Version enrichment scans at most 1,000 versions per file and fails if the exact version cannot be found. It never substitutes the current version. Failures leave the checkpoint unchanged. Filtered non-matching events still advance a successful poll's checkpoint.
 
-Poll at least hourly and use a shorter interval on busy accounts. This implementation uses the API's default one-day audit window; interruptions longer than 23 hours and backlogs beyond the scan limit stop with an explicit error. Reconcile missed events first, then recreate the trigger node to establish a new baseline. It does not use the unverified GET-body sync cursor from the Zapier candidate. Sequence polling assumes the service exposes events in sequence order; delayed lower-sequence events and audit access changes need separate reconciliation. On n8n runtimes using legacy workflow static data, quiet polls may only update memory until an event starts an execution. A restart without a saved checkpoint now stops with a reconciliation error instead of silently establishing a fresh baseline. Long quiet periods on legacy runtimes can still require reconciliation after restart. Quiet-poll persistence was verified on self-hosted n8n 2.42.5 with durable polling enabled (configuration below); n8n Cloud compatibility remains subject to review. Polling is not an exactly-once delivery guarantee: downstream retries can repeat actions, so use the audit UID with a durable deduplication ledger for consequential work.
+Poll at least hourly and use a shorter interval on busy accounts. This implementation uses the API's default one-day audit window; interruptions longer than 23 hours and backlogs beyond the scan limit stop with an explicit error. Reconcile missed events first, then recreate the trigger node to establish a new baseline. It does not use the unverified GET-body sync cursor from the Zapier candidate. Sequence polling assumes the service exposes events in sequence order; delayed lower-sequence events and audit access changes need separate reconciliation. On n8n runtimes using legacy workflow static data, quiet polls may only update memory until an event starts an execution. A restart without a saved checkpoint now stops with a reconciliation error instead of silently establishing a fresh baseline. Long quiet periods on legacy runtimes can still require reconciliation after restart. Quiet-poll persistence was verified on self-hosted n8n 2.42.5 with durable polling enabled (configuration below); the package is now approved for Cloud, but we have not independently repeated this quiet-poll persistence test in a fresh Cloud instance. Polling is not an exactly-once delivery guarantee: downstream retries can repeat actions, so use the audit UID with a durable deduplication ledger for consequential work.
 
 Import [watch-file-versions.json](examples/watch-file-versions.json) for a credential-free starting point. Select your account, optional file UID and credential before activation.
 
@@ -125,7 +142,7 @@ Version 0.3.0 was built and staged by the included GitHub Actions workflow using
 
 Version 0.3.1 did not expose Folderit as an AI tool. Version 0.4.0 adds native AI-tool support for JSON operations while keeping binary upload, add-version and download operations in normal workflow nodes. Both releases passed the official scanner, including provenance verification. [0.4.0 release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38228293407) · [0.3.1 patch release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38060180424).
 
-The package passed automated review in https://creators.n8n.io/nodes and now requires a demo video before manual review. n8n decides approval; npm publication alone does not make the connector available in n8n Cloud.
+n8n confirmed successful verification and publication on n8n Cloud on **27 October 2026**, after automated and manual review. Customers install it by searching **Folderit** in the canvas node panel. [Customer setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/). The npm README included with 0.4.0 predates approval; this repository records the current publication status.
 
 ## References
 
