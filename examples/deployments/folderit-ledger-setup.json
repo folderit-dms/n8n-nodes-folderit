@@ -1,0 +1,418 @@
+{
+  "name": "Folderit — Set up a durable processing ledger",
+  "nodes": [
+    {
+      "id": "b54821e6-748e-537d-a230-9632a4b37269",
+      "name": "Set up ledger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "dcabc28e-82cc-51b5-90c6-c2be9e9274fa",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"tableName\": \"Folderit Automation Receipts\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "6f44cc59-2948-5123-b2d8-96646bc8b831",
+      "name": "Create or reuse ledger",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        400
+      ],
+      "parameters": {
+        "resource": "table",
+        "operation": "create",
+        "tableName": "={{ $('Settings').first().json.tableName }}",
+        "columns": {
+          "column": [
+            {
+              "name": "key",
+              "type": "string"
+            },
+            {
+              "name": "state",
+              "type": "string"
+            },
+            {
+              "name": "owner",
+              "type": "string"
+            },
+            {
+              "name": "payloadHash",
+              "type": "string"
+            },
+            {
+              "name": "targetUid",
+              "type": "string"
+            },
+            {
+              "name": "sourceRef",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "createIfNotExists": true
+        }
+      }
+    },
+    {
+      "id": "83c80a58-f6fb-5631-b820-e8f84b83bf9a",
+      "name": "Validate table schema",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const table=$input.first().json; const expected=[\"key\", \"state\", \"owner\", \"payloadHash\", \"targetUid\", \"sourceRef\"]; if(!table.id || !Array.isArray(table.columns) || expected.some(k=>!table.columns.some(c=>c.name===k && c.type==='string'))) throw new Error('Existing table has an incompatible schema. Choose a new table name; do not replace customer data.'); return [{json:table}];"
+      }
+    },
+    {
+      "id": "8bcb44f9-0ed2-534f-ad9b-e176cd280674",
+      "name": "Find existing lock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        400
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Create or reuse ledger').first().json.id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "key",
+              "condition": "eq",
+              "keyValue": "__mutex__"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 2
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ba190b8c-4ee0-5fdb-b530-74b6128c17ea",
+      "name": "Check setup state",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rows=$input.all().filter(x=>x.json.id!==undefined); if(rows.length>1) throw new Error('Duplicate mutex rows need manual reconciliation.'); if(rows.length===1 && rows[0].json.sourceRef!=='folderit-ledger/v1') throw new Error('Unexpected lock schema.'); return [{json:{exists:rows.length?'yes':'no',tableId:$('Create or reuse ledger').first().json.id}}];"
+      }
+    },
+    {
+      "id": "c228d768-9989-5079-aafe-f5af4b50b33a",
+      "name": "Lock already exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "83b8d873-b1db-51ff-b8a6-bec0577b9df8",
+              "leftValue": "={{ $json.exists }}",
+              "rightValue": "yes",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "261fd768-8aab-5279-9569-d4276cd1ee80",
+      "name": "Create initial lock",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1680,
+        550
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Create or reuse ledger').first().json.id }}"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": []
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "__mutex__",
+            "state": "free",
+            "owner": "",
+            "payloadHash": "",
+            "targetUid": "",
+            "sourceRef": "folderit-ledger/v1"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "payloadHash",
+              "displayName": "payloadHash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "targetUid",
+              "displayName": "targetUid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sourceRef",
+              "displayName": "sourceRef",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "570c149c-dbfb-57ba-b104-7182a9238860",
+      "name": "Ledger is ready",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return [{json:{ledgerTableId:$('Create or reuse ledger').first().json.id, note:'Copy this ID into Settings in the customer workflows. Setup never resets an existing lock. Run setup once, not concurrently.'}}];"
+      }
+    },
+    {
+      "id": "b259b334-a41e-5eaf-9a4f-16f9ac7d1971",
+      "name": "Guide: Create the receipt ledger",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -170
+      ],
+      "parameters": {
+        "content": "# Create the receipt ledger\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nTo create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nChoose a table name in Settings, execute this setup ONCE, and copy ledgerTableId from the final output. Rerunning setup reuses an existing table and preserves its lock/receipts. Do not run setup concurrently. Keep all related workflows and this table in the SAME n8n project.",
+        "width": 1000,
+        "height": 500
+      }
+    },
+    {
+      "id": "4f84c32e-5615-599b-999e-d48326b211f3",
+      "name": "Guide: What gets stored",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        -170
+      ],
+      "parameters": {
+        "content": "# What gets stored\nThe ledger stores processing keys, hashes, source references, execution IDs and destination IDs. It never stores document bytes or credentials. Restrict access to the project. Do not delete completed receipts while old inputs can still be replayed.",
+        "width": 800,
+        "height": 500
+      }
+    }
+  ],
+  "connections": {
+    "Set up ledger": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Create or reuse ledger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or reuse ledger": {
+      "main": [
+        [
+          {
+            "node": "Validate table schema",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate table schema": {
+      "main": [
+        [
+          {
+            "node": "Find existing lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find existing lock": {
+      "main": [
+        [
+          {
+            "node": "Check setup state",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check setup state": {
+      "main": [
+        [
+          {
+            "node": "Lock already exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lock already exists?": {
+      "main": [
+        [
+          {
+            "node": "Ledger is ready",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create initial lock",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create initial lock": {
+      "main": [
+        [
+          {
+            "node": "Ledger is ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true
+  },
+  "pinData": {}
+}
