@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Synthetic invoice ÄÖÜ.txt",
+    "bytes": 75,
+    "sha256": "b38b4491f9362ecf9e84c67556e74a407c6fbefcb32794b12521711792284478",
+    "expected": "archive"
+  },
+  {
+    "name": "Synthetic terms.txt",
+    "bytes": 50,
+    "sha256": "b189a941164772d7370138d3e8bea8cd6fec19a51683a319e33fb990f356435f",
+    "expected": "archive"
+  },
+  {
+    "name": "blocked.exe",
+    "bytes": 64,
+    "sha256": "f81dff1a39dbc622586020dcd515fffc14f87984557155b4e755dffdf7e7b1e6",
+    "expected": "skip"
+  }
+]
