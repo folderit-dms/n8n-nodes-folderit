@@ -1,7 +1,9 @@
+import { testFolderitConnection } from './connection-test';
 import type { INodeType, INodeTypeDescription, IPollFunctions } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 import { loadOptions } from './discovery';
 import { pollEvents } from './polling';
+import { connectionProperty } from './api';
 export class FolderitTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Folderit Trigger',
@@ -15,15 +17,27 @@ export class FolderitTrigger implements INodeType {
 		polling: true,
 		inputs: [],
 		outputs: [NodeConnectionTypes.Main],
-		credentials: [{ name: 'folderitOAuth2Api', required: true }],
+		credentials: [
+			{
+				name: 'folderitOAuth2Api',
+				required: true,
+				displayOptions: { show: { authentication: ['folderitOAuth2Api'] } },
+			},
+			{
+				name: 'folderitApi',
+				required: true,
+				testedBy: 'testFolderitConnection',
+				displayOptions: { show: { authentication: ['folderitApi'] } },
+			},
+		],
 		properties: [
+			connectionProperty,
 			{
 				displayName: 'Account Name or ID',
 				name: 'accountUid',
 				type: 'options',
 				typeOptions: { loadOptionsMethod: 'getAccounts' },
 				default: '',
-				required: true,
 				description:
 					'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 			},
@@ -59,7 +73,10 @@ export class FolderitTrigger implements INodeType {
 			},
 		],
 	};
-	methods = { loadOptions: { getAccounts: loadOptions.getAccounts } };
+	methods = {
+		credentialTest: { testFolderitConnection },
+		loadOptions: { getAccounts: loadOptions.getAccounts },
+	};
 	async poll(this: IPollFunctions) {
 		return pollEvents(this);
 	}

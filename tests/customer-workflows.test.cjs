@@ -5,13 +5,13 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const files = ['folderit-ledger-setup.json', 'email-attachments-to-folderit-safe.json', 'outlook-attachments-to-folderit-safe.json', 'folderit-new-files-to-teams.json', 'folderit-expiry-reminders-to-teams.json', 'folderit-failure-alert-email.json'];
-const workflows = Object.fromEntries(files.map(name => [name, JSON.parse(fs.readFileSync(path.join(__dirname, '../examples', name), 'utf8'))]));
+const workflows = Object.fromEntries(files.map(name => [name, JSON.parse(fs.readFileSync(path.join(__dirname, '../examples/deployments', name), 'utf8'))]));
 function run(file, name, items, refs = {}, extra = {}) {
   const code = workflows[file].nodes.find(n => n.name === name).parameters.jsCode;
   return vm.runInNewContext('(function(){' + code + '\n})()', {
     $input: { all: () => items, first: () => items[0] },
     $execution: { id: 'execution-qa' },
-    $: name => ({ first: () => refs[name]?.[0], all: () => refs[name] || [], item: refs[name]?.[0] }),
+    $: name => { const values = refs[name] || (name === 'Read connection context' ? [{json:{apiOrigin:'https://api.folderit.com',accountUid:refs.Settings?.[0]?.json.accountUid}}] : []); return {first:()=>values[0],all:()=>values,item:values[0]}; },
     ...extra,
   });
 }
@@ -54,7 +54,7 @@ test('attachment keys distinguish mailbox, destination, message, part and conten
   assert.throws(() => key({ ...j, payloadHash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' }), /Empty/);
 });
 test('the archive restores attachment bytes after the Crypto node drops binary output', () => {
-  const input = { json: { payloadHash: 'a'.repeat(64) } };
+  const input = { json: { apiOrigin:'https://api.folderit.com', payloadHash: 'a'.repeat(64) } };
   const result = run(archive, 'Build attachment receipt keys', [input], { 'Split and validate attachments': [{ json: {}, binary: { data: { data: 'YQ==' } } }] });
   assert.equal(result[0].binary.data.data, 'YQ==');
   assert.throws(() => run(archive, 'Build attachment receipt keys', [input], { 'Split and validate attachments': [{ json: {} }] }), /binary is unavailable/);
@@ -135,4 +135,22 @@ test('failure email omits raw error details and strips foreign links and query s
   result = run(file, 'Prepare minimal failure alert', [], { Settings: [{ json: cfg }], 'Workflow failed': [{ json: source }] })[0].json;
   assert.doesNotMatch(result.text, /SUPERSECRET/);
   assert.throws(() => run(file, 'Prepare minimal failure alert', [], { Settings: [{ json: { ...cfg, toEmail: 'YOUR_RECIPIENT@example.invalid' } }] }), /addresses/);
+});
+
+test('new customer workflows verify credential-owned deployment context before destination processing',()=>{
+ for(const name of files.filter(n=>n.includes('safe')||n.includes('to-teams'))){const w=workflows[name];const info=w.nodes.find(n=>n.name==='Read connection context');assert(info);assert.equal(info.parameters.resource,'connection');assert.equal(w.connections.Settings.main[0][0].node,'Read connection context');for(const n of w.nodes.filter(n=>n.type.startsWith('n8n-nodes-folderit.')))assert.equal(n.parameters.authentication,'folderitApi');}
+ assert.throws(()=>run(archive,'Split and validate attachments',[],{...refs,'Read connection context':[{json:{apiOrigin:'https://api.custom.org',accountUid:'wrong-account'}}]}),/does not match/);
+});
+test('attachment receipt keys separate deployments while preserving existing cloud keys',()=>{
+ const make=origin=>{const r={...refs,'Read connection context':[{json:{apiOrigin:origin,accountUid:settings.accountUid}}]};const source=run(archive,'Split and validate attachments',[],r)[0];const hashed={json:{...source.json,payloadHash:'a'.repeat(64)}};return run(archive,'Build attachment receipt keys',[hashed],{'Split and validate attachments':[source]})[0].json.receiptKey;};
+ const cloud=JSON.parse(make('https://api.folderit.com'));assert.equal(cloud[1],settings.accountUid);assert.notEqual(make('https://api.one.org'),make('https://api.two.org'));assert(JSON.parse(make('https://api.one.org')).includes('https://api.one.org'));
+});
+test('attachment receipt processing stops when verified deployment context is absent',()=>{
+ const source=run(archive,'Split and validate attachments',[],refs)[0];
+ const item={json:{...source.json,payloadHash:'a'.repeat(64)}};delete item.json.apiOrigin;
+ assert.throws(()=>run(archive,'Build attachment receipt keys',[item],{'Split and validate attachments':[source]}),/Verified deployment context/);
+});
+test('Teams expiry receipt identity includes the verified deployment',()=>{
+ const source=[{json:{uid:'same-file',type:'file',name:'Same name',dueDate:due(7)}}];const make=origin=>run(reminderFile,'Select due reminders',source,{Settings:[{json:reminderCfg}],'Read connection context':[{json:{apiOrigin:origin,accountUid:reminderCfg.accountUid}}]},{Date:FixedDate})[0].json.receiptKey;
+ assert.notEqual(make('https://api.one.org'),make('https://api.two.org'));assert.equal(JSON.parse(make('https://api.folderit.com'))[1],reminderCfg.accountUid);
 });

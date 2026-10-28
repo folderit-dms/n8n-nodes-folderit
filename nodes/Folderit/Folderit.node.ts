@@ -1,3 +1,5 @@
+import { createHash } from 'crypto';
+import { testFolderitConnection } from './connection-test';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -6,7 +8,17 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { request, validateUid } from './api';
+import {
+	api,
+	request,
+	validateUid,
+	resolveAccount,
+	connectionInfo,
+	connectionProperty,
+	connectionDeployment,
+	storageRequest,
+	validateStorageUrl,
+} from './api';
 export { validateUid } from './api';
 import { loadOptions } from './discovery';
 import { documentProperties, metadataOperation } from './properties';
@@ -23,11 +35,38 @@ import { NodeApiError, NodeConnectionTypes, NodeOperationError, UserError } from
 
 const properties: INodeProperties[] = [
 	{
+		displayName: 'Version UID',
+		name: 'versionUid',
+		type: 'string',
+		default: '',
+		description:
+			'Optional exact version from Get Versions. Blank downloads the current file or preview. An exact version must exist in bounded history before downloading.',
+		displayOptions: { show: { resource: ['file'], operation: ['download', 'preview'] } },
+	},
+	connectionProperty,
+	{
+		displayName: 'Operation',
+		name: 'operation',
+		type: 'options',
+		noDataExpression: true,
+		displayOptions: { show: { resource: ['connection'] } },
+		options: [
+			{
+				name: 'Get',
+				value: 'get',
+				action: 'Get connection context',
+				description: 'Verify the deployment and account and return non-secret routing context',
+			},
+		],
+		default: 'get',
+	},
+	{
 		displayName: 'Resource',
 		name: 'resource',
 		type: 'options',
 		noDataExpression: true,
 		options: [
+			{ name: 'Connection', value: 'connection' },
 			{ name: 'File', value: 'file' },
 			{ name: 'Folder', value: 'folder' },
 			{ name: 'Metadata', value: 'metadata' },
@@ -53,6 +92,12 @@ const properties: INodeProperties[] = [
 				value: 'download',
 				action: 'Download a file',
 				description: 'Download a file as binary data for the next step',
+			},
+			{
+				name: 'Download Preview',
+				value: 'preview',
+				action: 'Download a file PDF preview',
+				description: 'Download an available PDF preview, optionally for an exact version',
 			},
 			{
 				name: 'Get',
@@ -124,7 +169,6 @@ const properties: INodeProperties[] = [
 		type: 'options',
 		typeOptions: { loadOptionsMethod: 'getAccounts' },
 		default: '',
-		required: true,
 		description:
 			'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
 	},
@@ -148,7 +192,10 @@ const properties: INodeProperties[] = [
 		default: '',
 		required: true,
 		displayOptions: {
-			show: { resource: ['file'], operation: ['get', 'download', 'addVersion', 'getVersions'] },
+			show: {
+				resource: ['file'],
+				operation: ['get', 'download', 'preview', 'addVersion', 'getVersions'],
+			},
 		},
 	},
 	{
@@ -210,7 +257,7 @@ const properties: INodeProperties[] = [
 		type: 'string',
 		default: 'data',
 		required: true,
-		displayOptions: { show: { resource: ['file'], operation: ['download'] } },
+		displayOptions: { show: { resource: ['file'], operation: ['download', 'preview'] } },
 		description: 'Name of the output binary field containing the downloaded file',
 	},
 	{
@@ -224,9 +271,18 @@ const properties: INodeProperties[] = [
 	},
 	...documentProperties,
 	...controlProperties,
+	{
+		displayName: 'Expected Connection Scope',
+		name: 'expectedConnectionScope',
+		type: 'string',
+		default: '',
+		description:
+			'Optional safety check: use connectionScope from a previous Connection/Get step. A different deployment or account stops before this action. This does not change routing.',
+		displayOptions: { hide: { resource: ['connection'] } },
+	},
 ];
 
-const binaryOperations = new Set(['upload', 'addVersion', 'download']);
+const binaryOperations = new Set(['upload', 'addVersion', 'download', 'preview']);
 const toolAwareProperties = properties.flatMap((property): INodeProperties[] => {
 	if (property.name !== 'operation' || property.displayOptions?.show?.resource?.[0] !== 'file')
 		return [property];
@@ -243,22 +299,7 @@ const toolAwareProperties = properties.flatMap((property): INodeProperties[] => 
 });
 
 // Signed storage URLs never receive the Folderit OAuth credentials.
-export function validateUploadUrl(value: unknown): string {
-	if (typeof value !== 'string') throw new UserError('Folderit did not return an upload URL.');
-	const url = new URL(value);
-	if (
-		url.protocol !== 'https:' ||
-		url.username ||
-		url.password ||
-		url.port ||
-		!url.hostname.endsWith('.amazonaws.com')
-	) {
-		throw new UserError(
-			'Folderit returned an unsupported storage URL. Expected an HTTPS Amazon S3 URL.',
-		);
-	}
-	return value;
-}
+export const validateUploadUrl = validateStorageUrl;
 
 export class Folderit implements INodeType {
 	description: INodeTypeDescription = {
@@ -274,18 +315,32 @@ export class Folderit implements INodeType {
 		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
-		credentials: [{ name: 'folderitOAuth2Api', required: true }],
+		credentials: [
+			{
+				name: 'folderitOAuth2Api',
+				required: true,
+				displayOptions: { show: { authentication: ['folderitOAuth2Api'] } },
+			},
+			{
+				name: 'folderitApi',
+				required: true,
+				testedBy: 'testFolderitConnection',
+				displayOptions: { show: { authentication: ['folderitApi'] } },
+			},
+		],
 		properties: toolAwareProperties,
 	};
 
-	methods = { loadOptions: { ...loadOptions, getWorkflows } };
+	methods = {
+		credentialTest: { testFolderitConnection },
+		loadOptions: { ...loadOptions, getWorkflows },
+	};
 
 	async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {
 		const output: INodeExecutionData[] = [];
 		for (let i = 0; i < this.getInputData().length; i++) {
 			try {
 				const get = (name: string) => this.getNodeParameter(name, i) as string;
-				const account = validateUid(get('accountUid'));
 				const resource = get('resource');
 				const operation = get('operation');
 				if (
@@ -296,8 +351,19 @@ export class Folderit implements INodeType {
 					throw new UserError(
 						'Binary file operations require a normal Folderit workflow node, not an AI tool.',
 					);
+				const account = await resolveAccount(this, get('accountUid'));
+				const expectedScope = String(this.getNodeParameter('expectedConnectionScope', i, '') || '');
+				if (
+					expectedScope &&
+					expectedScope !== JSON.stringify([(await connectionDeployment(this)).apiOrigin, account])
+				)
+					throw new UserError(
+						'The selected Folderit credential does not match the expected deployment/account. No action was attempted.',
+					);
 				let results: IDataObject[];
-				if (resource === 'metadata') {
+				if (resource === 'connection') {
+					results = [await connectionInfo(this, account)];
+				} else if (resource === 'metadata') {
 					results = await executeMetadata(this, account, operation, i);
 				} else if (resource === 'workflow') {
 					results = await executeWorkflow(this, account, operation, i);
@@ -312,19 +378,36 @@ export class Folderit implements INodeType {
 					);
 				} else if (operation === 'search' && ['file', 'folder'].includes(resource)) {
 					results = await searchRecords(this, account, resource, i);
-				} else if (resource === 'file' && operation === 'download') {
+				} else if (resource === 'file' && ['download', 'preview'].includes(operation)) {
 					const uid = validateUid(get('fileUid'));
 					const field = get('outputBinaryField').trim();
 					if (!field || ['__proto__', 'constructor', 'prototype'].includes(field))
 						throw new UserError('Enter a valid output binary field name.');
 					const file = await request(this, account, 'GET', `/files/${uid}`);
+					const versionUid = String(this.getNodeParameter('versionUid', i, '') || '').trim();
+					let selectedVersion: IDataObject | undefined;
+					if (versionUid) {
+						validateUid(versionUid);
+						selectedVersion = (await listVersions(this, account, uid, 1000)).find(
+							(v) => v.versionUid === versionUid,
+						);
+						if (!selectedVersion)
+							throw new UserError(
+								'The exact version was not found in bounded history. No download was attempted.',
+							);
+					}
+					const preview = operation === 'preview';
+					if (preview && (selectedVersion || file).previewAvailable !== true)
+						throw new UserError(
+							'The selected file/version does not have an available PDF preview. Wait for processing or check its permissions.',
+						);
 					try {
-						const response = await this.helpers.httpRequestWithAuthentication.call(
+						const response = await api(
 							this,
-							'folderitOAuth2Api',
+							`/accounts/${account}/files/${uid}${versionUid ? `/versions/${versionUid}` : ''}/${preview ? 'preview' : 'download'}`,
 							{
 								method: 'GET',
-								url: `https://api.folderit.com/v2/accounts/${account}/files/${uid}/download`,
+								json: false,
 								disableFollowRedirect: true,
 								returnFullResponse: true,
 								ignoreHttpStatusErrors: true,
@@ -333,9 +416,9 @@ export class Folderit implements INodeType {
 						);
 						if (![302, 303].includes(response.statusCode))
 							throw new UserError('Unexpected download response.');
-						const url = validateUploadUrl(response.headers.location);
+						const url = response.headers.location;
 						// Download anonymously and stream into n8n's binary storage.
-						const stream = await this.helpers.httpRequest({
+						const stream = await storageRequest(this, {
 							method: 'GET',
 							url,
 							encoding: 'stream',
@@ -344,15 +427,58 @@ export class Folderit implements INodeType {
 						});
 						const binary = await this.helpers.prepareBinaryData(
 							stream,
-							typeof file.name === 'string' ? file.name : uid,
-							typeof file.mimeType === 'string' ? file.mimeType : undefined,
+							preview
+								? `${String(file.name || uid).replace(/\.[^.]+$/, '')}.pdf`
+								: typeof file.name === 'string'
+									? file.name
+									: uid,
+							preview
+								? 'application/pdf'
+								: typeof file.mimeType === 'string'
+									? file.mimeType
+									: undefined,
 						);
+						if (selectedVersion || preview) {
+							const hash = createHash('sha256');
+							let size = 0;
+							let prefix = Buffer.alloc(0);
+							const downloaded = binary.id
+								? await this.helpers.getBinaryStream(binary.id)
+								: [Buffer.from(binary.data, 'base64')];
+							for await (const chunk of downloaded) {
+								const bytes = Buffer.from(chunk);
+								hash.update(bytes);
+								size += bytes.length;
+								if (prefix.length < 5)
+									prefix = Buffer.concat([prefix, bytes.subarray(0, 5 - prefix.length)]);
+							}
+							const sha256 = hash.digest('hex');
+							if (preview && prefix.toString() !== '%PDF-')
+								throw new UserError('The preview response was not a PDF.');
+							if (selectedVersion && !preview) {
+								const expected = (selectedVersion.hash as IDataObject | undefined)?.sha256;
+								if (
+									typeof selectedVersion.size !== 'number' ||
+									selectedVersion.size !== size ||
+									(expected && String(expected).toLowerCase() !== sha256)
+								)
+									throw new UserError('The downloaded version bytes did not match history.');
+							}
+							Object.assign(file, {
+								downloadedSize: size,
+								downloadedSha256: sha256,
+								...(versionUid ? { downloadedVersionUid: versionUid } : {}),
+								...(preview ? { downloadedPreview: true } : {}),
+							});
+						}
 						output.push({ json: file, binary: { [field]: binary }, pairedItem: { item: i } });
 						continue;
-					} catch {
+					} catch (error) {
 						throw new NodeOperationError(
 							this.getNode(),
-							'File download failed. Check file access and try again.',
+							error instanceof UserError
+								? `File download failed. ${error.message}`
+								: 'File download failed. Check file access and try again.',
 							{ itemIndex: i },
 						);
 					}
@@ -457,9 +583,9 @@ export class Folderit implements INodeType {
 								partNumber,
 								contentLength: chunk.length,
 							});
-							const url = validateUploadUrl(part.url);
+							const url = part.url;
 							try {
-								await this.helpers.httpRequest({
+								await storageRequest(this, {
 									method: 'PUT',
 									url,
 									body: chunk,

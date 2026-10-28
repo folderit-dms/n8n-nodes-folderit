@@ -1,6 +1,6 @@
 import type { IDataObject, ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
 import { UserError } from 'n8n-workflow';
-import { api, collection, request, validateUid } from './api';
+import { api, collection, request, validateUid, resolveAccount, credentialType } from './api';
 import type { Context } from './api';
 export async function definitions(context: Context, account: string): Promise<IDataObject[]> {
 	const output: IDataObject[] = [];
@@ -50,13 +50,19 @@ export function folderOptions(rows: IDataObject[]): INodePropertyOptions[] {
 }
 export const loadOptions = {
 	async getAccounts(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		return collection(await api(this, '/accounts'))
+		const c =
+			credentialType(this) === 'folderitApi' ? await this.getCredentials('folderitApi') : null;
+		const exact = c?.accountUid || c?.selectedAccountUid;
+		const all = exact
+			? [await request(this, validateUid(String(exact)), 'GET', '')]
+			: collection(await api(this, '/accounts'));
+		return all
 			.filter((r) => typeof r.uid === 'string')
 			.map((r) => ({ name: `${r.name ?? r.uid} (${r.uid})`, value: String(r.uid) }))
 			.sort((a, b) => a.name.localeCompare(b.name));
 	},
 	async getFolders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const account = validateUid(this.getNodeParameter('accountUid') as string);
+		const account = await resolveAccount(this, this.getNodeParameter('accountUid'));
 		const rows: IDataObject[] = [];
 		let cursor: string | undefined;
 		const seen = new Set<string>();
@@ -78,7 +84,9 @@ export const loadOptions = {
 		);
 	},
 	async getMetadata(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		return (await definitions(this, validateUid(this.getNodeParameter('accountUid') as string)))
+		return (
+			await definitions(this, await resolveAccount(this, this.getNodeParameter('accountUid')))
+		)
 			.map((r) => ({
 				name: `${r.name ?? r.uid} [${r.type}${r.multiple ? ' array' : ''}] (${r.uid})`,
 				value: String(r.uid),
@@ -86,7 +94,7 @@ export const loadOptions = {
 			.sort((a, b) => a.name.localeCompare(b.name));
 	},
 	async getSelectOptions(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-		const account = validateUid(this.getNodeParameter('accountUid') as string);
+		const account = await resolveAccount(this, this.getNodeParameter('accountUid'));
 		const uid = validateUid(this.getNodeParameter('metadataUid') as string);
 		const def = await request(this, account, 'GET', `/meta/${uid}`);
 		return Array.isArray(def.options)

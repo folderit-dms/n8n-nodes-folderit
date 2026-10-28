@@ -1,0 +1,123 @@
+{
+  "name": "Folderit — Email alerts for failed automation workflows",
+  "nodes": [
+    {
+      "id": "39d845f0-913a-57bc-a68e-746ba095a447",
+      "name": "Workflow failed",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "e3d85219-3205-51f4-ad0a-0933a1d7d5ba",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        400
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"fromEmail\": \"YOUR_SENDER@example.invalid\",\n  \"toEmail\": \"YOUR_RECIPIENT@example.invalid\",\n  \"n8nBaseUrl\": \"https://YOUR_INSTANCE.app.n8n.cloud\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "7c48a973-caa0-568e-bf0f-762128a3e0e9",
+      "name": "Prepare minimal failure alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        400
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const cfg=$('Settings').first().json;\nfor(const k of ['fromEmail','toEmail'])if(typeof cfg[k]!=='string'||!cfg[k].includes('@')||/YOUR_|example\\.invalid/.test(cfg[k])||/[\\r\\n]/.test(cfg[k]))throw new Error('Set valid alert sender/recipient addresses in Settings.');\nconst source=$('Workflow failed').first().json;const execution=source.execution||{};const workflow=source.workflow||{};\nconst clean=v=>String(v??'unknown').replace(/[\\r\\n\\x00-\\x1f]/g,' ').slice(0,180);\nconst base=String(cfg.n8nBaseUrl||'').replace(/\\/$/,'');if(!/^https:\\/\\/[a-z0-9.-]+(?::\\d{1,5})?$/i.test(base)||base.includes('YOUR_'))throw new Error('Set n8nBaseUrl to your HTTPS instance origin, without a path or credentials.');\nconst supplied=typeof execution.url==='string'?execution.url:'';const link=supplied.startsWith(base+'/')?supplied.split(/[?#]/)[0]:base;\nreturn [{json:{fromEmail:cfg.fromEmail,toEmail:cfg.toEmail,subject:`Folderit automation failed: ${clean(workflow.name)}`,text:`A Folderit automation needs attention.\\nWorkflow: ${clean(workflow.name)}\\nWorkflow ID: ${clean(workflow.id)}\\nExecution ID: ${clean(execution.id)}\\nLast node: ${clean(execution.lastNodeExecuted||source.trigger?.error?.node?.name)}\\nOpen n8n: ${link}\\n\\nInspect the failed execution, processing lock, receipts and actual destination. Do not blindly replay uploads or notifications. Raw error messages, stacks, document content and credentials are deliberately omitted.`}}];"
+      }
+    },
+    {
+      "id": "f3a08a53-c34d-5ecb-a27d-dfb37dd137b8",
+      "name": "Email the workflow owner",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        400
+      ],
+      "parameters": {
+        "fromEmail": "={{ $json.fromEmail }}",
+        "toEmail": "={{ $json.toEmail }}",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      }
+    },
+    {
+      "id": "e9516c0b-6ce7-5ea3-8670-e8083a240328",
+      "name": "Guide: Shared failure alerts",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -170
+      ],
+      "parameters": {
+        "content": "# Shared failure alerts\nFor Tailor-plan Folderit automation operators. Connect an SMTP credential in Email the workflow owner. Set your real sender, recipient and HTTPS n8n instance origin in Settings. The sender must be permitted by your mail provider.\n\nSave this workflow. In EACH main workflow, open **⋯ → Settings → Error workflow**, choose this workflow and save. Create a controlled failure in an ACTIVATED test workflow and check the actual recipient mailbox. Manual executions do not automatically invoke Error Trigger.\n\nThis workflow sends only names/IDs and a same-origin execution link. It omits raw errors, stack traces, document content, API tokens and signed storage links. Trigger failures may not have an execution ID. Monitor SMTP delivery separately; an alert workflow can itself fail.",
+        "width": 1100,
+        "height": 600
+      }
+    }
+  ],
+  "connections": {
+    "Workflow failed": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Prepare minimal failure alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare minimal failure alert": {
+      "main": [
+        [
+          {
+            "node": "Email the workflow owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveExecutionProgress": true
+  },
+  "pinData": {}
+}

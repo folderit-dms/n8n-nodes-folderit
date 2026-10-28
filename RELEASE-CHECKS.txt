@@ -1,3 +1,64 @@
+Folderit n8n 0.5.0 deployment-aware candidate — 2026-10-28
+
+Release state: local candidate only. Public verified 0.4.0 remains unchanged.
+Do not announce authenticated single-tenant support as already available on Cloud.
+
+Implemented
+- Separate Folderit Connection API credential alongside unchanged cloud OAuth2.
+- Public API/docs URL normalization, independent browser/login origin, exact
+  sibling OIDC issuer/token/grant/method verification before sending a secret.
+- Enforced n8n egress checks, explicit reserved-IP rejection and pinned public
+  IP transport with certificate-verified original TLS SNI/Host. No redirects,
+  private-host switch, cloud fallback or Bearer credentials on storage calls.
+- Credential/account-bound encrypted sessions and native token renewal.
+- Central routing for nodes, polling, selectors, pagination and binary transfer.
+- Connection/Get returns non-secret context. Action scope guards reject a
+  different deployment/account before destination operations.
+- New exact-version downloads verify actual size and available SHA-256;
+  PDF previews verify the actual header and record byte hash/size.
+- New workflow keys include custom deployment origin; existing cloud receipt
+  keys and legacy credential/trigger behavior are preserved.
+
+Native local acceptance (n8n 2.42.5, Node 24.21.0; isolated data directory)
+- Public credential-free discovery passed with actual n8n network helpers and
+  TLS/public-IP pinning for cloud, Apollo and auth.my.chaffinch.com.
+- New standard-cloud connection authenticated and read only an existing
+  synthetic file. Actual downloaded UTF-8 matched all 75 bytes.
+- A deliberately invalid cached token caused safe native GET renewal; the
+  same independent file download succeeded. No write was retried.
+- Exact historical version E4qSD03lkp downloaded all 75 bytes and matched SHA256
+  36b1d6c45318c57ceb00ac9788cfef3499dc9393c60f96f7c6e988e2585eb9ce.
+- That version's actual PDF preview was 13,319 bytes and matched an independent
+  anonymous download: SHA256
+  6c97817d1b23da50206af0ad330a5429fc845158fcc56fa7980ef4551851be36.
+- No Folderit record was created, updated or deleted for these read checks.
+
+Apollo acceptance (read-only)
+- Apollo authenticated native read-only acceptance passed with dedicated keys
+  entered by the maintainer only in isolated local n8n. Exact account read,
+  historical PDF download and Apollo browser link passed. Actual PDF bytes:
+  107,705; the SHA256 matched the approved fixture exactly. Detailed proof
+  remains in the local acceptance report.
+  The editor credential test, manual workflow execution and exact account/folder
+  selectors also passed. No customer records changed
+  and no Apollo credentials were copied to n8n Cloud.
+
+Remaining release/acceptance gates
+- Chaffinch/custom-domain discovery passed; no authenticated customer-data
+  credentials or permission are available. Do not label it authenticated proof.
+- Clean-source TypeScript build, official n8n lint and all 90 tests pass.
+  The exact packed archive also passed native legacy-cloud download, new
+  connection exact-version download and PDF preview. Editor acceptance of
+  the final credential and Apollo account/folder dropdowns also passed.
+- Existing 0.4 customer exports and public ZIP remain byte-identical to main;
+  0.5 deployment variants have their own directory and separate ZIP.
+- Update publication evidence only after staging/provenance, maintainer 2FA,
+  actual npm publication and n8n Cloud availability/acceptance of the new build.
+- Real mailbox, Teams and external SMTP provider delivery remains a separate
+  customer-workflow acceptance check. Private networks need a supported design.
+
+Historical public-release and customer-workflow evidence follows.
+
 Folderit n8n publication update — 2026-10-27
 
 n8n approved and published version 0.4.0 as a verified community node,

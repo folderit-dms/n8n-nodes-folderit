@@ -1,6 +1,13 @@
 import type { IDataObject, IPollFunctions, INodeExecutionData } from 'n8n-workflow';
 import { UserError } from 'n8n-workflow';
-import { collection, request, validateUid } from './api';
+import {
+	collection,
+	request,
+	validateUid,
+	resolveAccount,
+	connectionDeployment,
+	credentialType,
+} from './api';
 export const eventGroups: Record<string, string[]> = {
 	newFile: ['fileNew'],
 	newFolder: ['folderNew'],
@@ -63,7 +70,7 @@ export function normalizeEvent(row: IDataObject): IDataObject {
 	};
 }
 export async function pollEvents(context: IPollFunctions): Promise<INodeExecutionData[][] | null> {
-	const account = validateUid(String(context.getNodeParameter('accountUid')));
+	const account = await resolveAccount(context, context.getNodeParameter('accountUid'));
 	const event = String(context.getNodeParameter('event'));
 	const filter = String(context.getNodeParameter('recordUid', '')).trim();
 	if (filter) validateUid(filter);
@@ -75,7 +82,10 @@ export async function pollEvents(context: IPollFunctions): Promise<INodeExecutio
 		account,
 		event,
 		filter,
-		context.getNode().credentials?.folderitOAuth2Api?.id ?? '',
+		context.getNode().credentials?.[credentialType(context)]?.id ?? '',
+		...(credentialType(context) === 'folderitApi'
+			? [(await connectionDeployment(context)).apiOrigin]
+			: []),
 	]);
 	const seeded = state.scope === scope && typeof state.cursor === 'string';
 	const activation = context.getActivationMode();
