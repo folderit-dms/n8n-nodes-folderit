@@ -18,9 +18,22 @@ extension was absent. Replaying the same message left exactly two files and two
 completed receipts, with the processing lock free. No mailbox credential or
 private destination identifier is included in these exports.
 
-Teams channel delivery, external SMTP and remaining provider failure cases are
-pending. These candidates are not submitted/approved library listings.
-Do not label those pending checks passed. All exports are inactive, credential
+Real Microsoft Teams delivery passed in n8n Cloud 2.46.0 with verified Folderit
+0.4.0. One scheduled arrival notice matched the exact test folder; the other
+folder's arrivals were excluded. Three initial reminder messages covered an
+upcoming date, due-today date and overdue date; far-future and absent dates were
+skipped. Independent Graph reads verified message identities, bodies and the
+actual team/channel. Both replays preserved the original message IDs. A changed
+Due date produced one additional reminder during overlapping workflow runs.
+
+A controlled send failure left a pending receipt and held its isolated lock.
+A fresh replay stopped after bounded waiting without another destination action.
+The normal workflow tables retained their completed receipts and free locks.
+Other error branches have regression coverage; no universal provider or
+exactly-once guarantee is claimed. Optional external SMTP remains unverified.
+
+These candidates are not submitted/approved library listings.
+All exports are inactive, credential
 free and have no pinned output. Native PNG previews accompany each workflow.
 Final image links are documentation-only additions to the tested graph.
 

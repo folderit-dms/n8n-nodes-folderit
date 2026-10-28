@@ -8,7 +8,7 @@
       "n8n Data Table v1.1",
       "provider credentials"
     ],
-    "acceptance": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; remaining failure checks pending; not submitted to n8n library"
+    "acceptance": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; not submitted to n8n library"
   },
   {
     "file": "notify-teams-on-new-documents.json",
@@ -19,7 +19,7 @@
       "n8n Data Table v1.1",
       "provider credentials"
     ],
-    "acceptance": "provider checks pending; not submitted to n8n library"
+    "acceptance": "Real scheduled Teams arrival, exact-folder exclusion and duplicate replay passed in n8n Cloud; not submitted to n8n library"
   },
   {
     "file": "remind-teams-about-due-dates.json",
@@ -30,6 +30,6 @@
       "n8n Data Table v1.1",
       "provider credentials"
     ],
-    "acceptance": "provider checks pending; not submitted to n8n library"
+    "acceptance": "Real Teams reminders, skipped dates, duplicate replay, changed-date overlap and controlled failure quarantine passed in n8n Cloud; not submitted to n8n library"
   }
 ]
