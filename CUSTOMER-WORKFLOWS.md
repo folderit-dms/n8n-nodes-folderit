@@ -17,7 +17,7 @@ These workflows are for **Folderit Tailor-plan users**, who can use the Folderit
 
 The verified Folderit connector is available on n8n Cloud. These newer workflows require **Data Table node v1.1** and its table-management operations; native processing was tested on **n8n 2.42.5**. On **27 October 2026**, a fresh **n8n Cloud 2.45.4** instance installed verified Folderit 0.4.0 and passed a real folder/upload/read/download round trip with an independently verified 75-byte UTF-8 file. Receipt-table setup was also tested there. Your real Microsoft/mail connections still need acceptance tests.
 
-For the 0.5.0 deployment-aware candidate, use the [separate deployment workflow guide](examples/deployments/CUSTOMER-WORKFLOWS.md). The six exports linked here retain compatibility with published connector 0.4.0. The existing customer ZIP remains unchanged.
+For published 0.5.0 deployment-aware connections, use the [separate deployment workflow guide](examples/deployments/CUSTOMER-WORKFLOWS.md). The six exports linked here retain compatibility with published connector 0.4.0. The existing customer ZIP remains unchanged.
 
 ## Start from your own computer
 

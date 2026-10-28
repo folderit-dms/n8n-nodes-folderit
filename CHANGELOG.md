@@ -1,13 +1,13 @@
 # Changelog
 
-## 0.5.0 — unreleased candidate, 2026-10-28
+## 0.5.0 — published, 2026-10-28
 
 - Add deployment-aware Folderit Connection credentials alongside unchanged standard-cloud OAuth2 credentials.
 - Verify exact public OIDC discovery before client-secret exchange; bind encrypted sessions to deployment, client and account. Pin public DNS/TLS routing and reject redirects, private destinations and credential forwarding to storage.
 - Route every action, selector, polling request and anonymous binary transfer through its selected deployment. Generate links only for the configured browser origin.
 - Add Connection/Get, exact-version downloads with byte verification, and PDF previews. Keep all binary operations unavailable as AI tools.
 - Scope new polling checkpoints and deployment-workflow receipt keys by deployment and account. Keep the 0.4 customer bundle/exports intact and provide 0.5 variants separately under examples/deployments. Preserve existing cloud credential defaults, checkpoints and cloud receipt keys.
-- Add a credential-free read-only deployment example and installation/migration guidance. Public/custom authenticated acceptance and n8n Cloud eligibility remain explicit release checks.
+- Add a credential-free read-only deployment example and installation/migration guidance. Standard-cloud and Apollo authenticated read-only acceptance passed. Chaffinch authenticated acceptance and 0.5.0 n8n Cloud availability remain separate checks.
 
 ### Customer workflow examples
 

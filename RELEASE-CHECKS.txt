@@ -1,6 +1,7 @@
-Folderit n8n 0.5.0 deployment-aware candidate — 2026-10-28
+Folderit n8n 0.5.0 deployment-aware release — 2026-10-28
 
-Release state: local candidate only. Public verified 0.4.0 remains unchanged.
+Release state: 0.5.0 published on npm after protected GitHub review and npm
+security-key approval. n8n Cloud currently offers verified 0.4.0.
 Do not announce authenticated single-tenant support as already available on Cloud.
 
 Implemented
@@ -43,7 +44,18 @@ Apollo acceptance (read-only)
   selectors also passed. No customer records changed
   and no Apollo credentials were copied to n8n Cloud.
 
-Remaining release/acceptance gates
+Public publication verification
+- Release source ac75e673532a0f7895193f056c670d5cb017dabf.
+- GitHub Actions run 40656380108 passed and staged the tested archive.
+- Public npm SHA1 056331f351c3d78e89f1ce6e011ae1043c1231a5
+  matches the staged archive. All 68 registry file contents match the local
+  tested archive; no missing, extra or changed files.
+- Official @n8n/scan-community-package 0.41.1 passed all security, source and
+  provenance checks against published n8n-nodes-folderit@0.5.0.
+- Package: https://www.npmjs.com/package/n8n-nodes-folderit/v/0.5.0
+- Provenance: https://search.sigstore.dev/?logIndex=3535417578
+
+Remaining acceptance gates
 - Chaffinch/custom-domain discovery passed; no authenticated customer-data
   credentials or permission are available. Do not label it authenticated proof.
 - Clean-source TypeScript build, official n8n lint and all 90 tests pass.
@@ -52,8 +64,10 @@ Remaining release/acceptance gates
   the final credential and Apollo account/folder dropdowns also passed.
 - Existing 0.4 customer exports and public ZIP remain byte-identical to main;
   0.5 deployment variants have their own directory and separate ZIP.
-- Update publication evidence only after staging/provenance, maintainer 2FA,
-  actual npm publication and n8n Cloud availability/acceptance of the new build.
+- n8n Creator Portal and Cloud still offer verified 0.4.0. The new 0.5.0
+  update needs platform verification/propagation before Cloud acceptance.
+  A credential-free read-only Cloud check is prepared; only standard demo
+  credentials are authorized there.
 - Real mailbox, Teams and external SMTP provider delivery remains a separate
   customer-workflow acceptance check. Private networks need a supported design.
 
