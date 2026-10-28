@@ -131,9 +131,11 @@ def build(case):
     target.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n")
     return dict(file=target.name, name=case["title"], nodes=len(obj["nodes"]),
                 requirements=["Folderit Tailor plan and API access", "n8n Data Table v1.1", "provider credentials"],
-                acceptance=("Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; remaining failure checks pending; not submitted to n8n library"
-                            if case["slug"] == "archive-imap-attachments"
-                            else "provider checks pending; not submitted to n8n library"))
+                acceptance={
+                    "archive-imap-attachments": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; not submitted to n8n library",
+                    "notify-teams-on-new-documents": "Real scheduled Teams arrival, exact-folder exclusion and duplicate replay passed in n8n Cloud; not submitted to n8n library",
+                    "remind-teams-about-due-dates": "Real Teams reminders, skipped dates, duplicate replay, changed-date overlap and controlled failure quarantine passed in n8n Cloud; not submitted to n8n library",
+                }[case["slug"]])
 
 
 if __name__ == "__main__":
