@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const files = ['folderit-ledger-setup.json', 'email-attachments-to-folderit-safe.json', 'outlook-attachments-to-folderit-safe.json', 'folderit-new-files-to-teams.json', 'folderit-expiry-reminders-to-teams.json', 'folderit-failure-alert-email.json'];
-const workflows = Object.fromEntries(files.map(name => [name, JSON.parse(fs.readFileSync(path.join(__dirname, '../examples', name), 'utf8'))]));
+const workflows = Object.fromEntries(files.map(name => [name, JSON.parse(fs.readFileSync(path.join(__dirname, '../examples/deployments', name), 'utf8'))]));
 function run(file, name, items, refs = {}, extra = {}) {
   const code = workflows[file].nodes.find(n => n.name === name).parameters.jsCode;
   return vm.runInNewContext('(function(){' + code + '\n})()', {
