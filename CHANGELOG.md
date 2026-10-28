@@ -1,6 +1,15 @@
 # Changelog
 
-## Unreleased customer workflow examples
+## 0.5.0 — unreleased candidate, 2026-10-28
+
+- Add deployment-aware Folderit Connection credentials alongside unchanged standard-cloud OAuth2 credentials.
+- Verify exact public OIDC discovery before client-secret exchange; bind encrypted sessions to deployment, client and account. Pin public DNS/TLS routing and reject redirects, private destinations and credential forwarding to storage.
+- Route every action, selector, polling request and anonymous binary transfer through its selected deployment. Generate links only for the configured browser origin.
+- Add Connection/Get, exact-version downloads with byte verification, and PDF previews. Keep all binary operations unavailable as AI tools.
+- Scope new polling checkpoints and customer-workflow receipt keys by deployment and account. Preserve existing cloud credential defaults, checkpoints and cloud receipt keys.
+- Add a credential-free read-only deployment example and installation/migration guidance. Public/custom authenticated acceptance and n8n Cloud eligibility remain explicit release checks.
+
+### Customer workflow examples
 
 - Add IMAP/Outlook attachment archiving with persistent receipts, a shared processing lock and actual downloaded-byte verification.
 - Add Microsoft Teams arrival notices and document Due-date reminder workflows.

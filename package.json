@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-folderit",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "n8n community node for Folderit document and folder management",
   "license": "MIT",
   "homepage": "https://www.folderit.com/",
@@ -35,7 +35,8 @@
     "n8nNodesApiVersion": 1,
     "strict": true,
     "credentials": [
-      "dist/credentials/FolderitOAuth2Api.credentials.js"
+      "dist/credentials/FolderitOAuth2Api.credentials.js",
+      "dist/credentials/FolderitApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/Folderit/Folderit.node.js",

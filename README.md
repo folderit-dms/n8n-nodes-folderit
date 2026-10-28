@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Release status:** n8n approved and published Folderit as a verified community node on **27 October 2026**. [Version 0.4.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0), with GitHub Actions provenance and native AI-agent tool support. The approval email confirms n8n Cloud availability. Our own fresh Cloud-instance acceptance test is still outstanding; the validation evidence below identifies the local runtime actually tested.
+**Release status:** n8n approved and published Folderit as a verified community node on **27 October 2026**. [Version 0.4.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0), with GitHub Actions provenance and native AI-agent tool support. The approval email confirms n8n Cloud availability. A fresh n8n Cloud 2.45.4 instance passed the standard-cloud round trip and receipt-table setup on 27 October 2026. The deployment-aware 0.5.0 changes in this branch are a release candidate and are not yet published or verified on n8n Cloud.
 
 ## Get started
 
@@ -17,7 +17,8 @@ A Creator Portal account is for publishing integrations. It is separate from the
 
 ## Operations
 
-- File: get details and metadata; list or search files; upload a binary file; add a file version; list version history; download a file as binary data.
+- File: get details and metadata; list or search files; upload a binary file; add a file version; list version history; download current or exact-version bytes; download an available PDF preview. Exact-version downloads and previews are new in the 0.5.0 candidate.
+- Connection: verify the selected account and return non-secret API/browser/account context (0.5.0 candidate).
 - Folder: create a child folder; get details; list or search folders.
 - Metadata: list field definitions; read record metadata; validate, update or clear one field.
 - Workflow: list available manual starts; queue a selected workflow; read all progress runs.
@@ -33,7 +34,36 @@ Delete operations and approval-response actions are not included. Workflow task 
 
 Folderit currently documents API access as a Tailor-plan feature. Obtain a client ID, client secret and account UID from your Folderit administrator. Create a **Folderit OAuth2 API** credential in n8n and enter the client ID and secret. n8n handles the OAuth2 client-credentials exchange at `https://auth.folderit.com/oauth2/token`. Choose the account in the node, or enter its UID using an expression.
 
-Credentials belong in n8n's credential store. Never put them in workflow JSON, this repository or npm. The node connects to the public `api.folderit.com` service; dedicated/private API hosts are not supported in this release.
+Credentials belong in n8n's credential store. Never put them in workflow JSON, this repository or npm. Published version 0.4.0 connects to the public `api.folderit.com` service. The 0.5.0 candidate adds the separate connection described below; existing OAuth2 credentials retain their cloud routing and account selection.
+
+## Deployment connections (0.5.0 candidate)
+
+One package supports standard cloud and public single-tenant/custom-domain deployments through **Folderit Connection API** credentials. This candidate requires an n8n runtime exposing its secure egress helper; it has been tested locally on **n8n 2.42.5 / Node 24.21.0**. Missing capability fails before authentication. Installation on n8n Cloud remains subject to n8n's package verification and availability.
+
+1. Install the tested 0.5.0 package in a test instance. Published 0.4.0 does not contain these fields or operations.
+2. Open a **Folderit** node. Set **Connection Type → Folderit Connection (Cloud or Custom Deployment)**. In its credential selector, choose **Create new credential**.
+3. Enter **API or Documentation URL**, the matching **Client ID** and **Client Secret**, and the deployment's **Browser or Sign-in URL**. The cloud API default is prefilled. Examples below are address configurations, not access credentials.
+4. Leave the credential's **Account UID** blank only when the client can access exactly one account. If verification reports several accounts, enter the exact intended UID before the first successful connection. It never chooses the first account. An explicit UID is checked directly without enumerating other accounts.
+5. Save the credential. Its first modal test asks for a bootstrap read: close the credential dialog, set **Resource → Connection**, **Operation → Get**, leave the node's Account UID blank and **Execute step**. This checks public routing, exact authentication metadata and actual account access. Afterward, reopening the credential's test performs an independent account read. This two-step setup is needed because n8n's credential-test context does not expose secure DNS resolution.
+6. Select that same credential in each Folderit action and trigger in the workflow. Blank node Account UID uses its verified account; a different UID is rejected. Run [deployment-read-only.json](examples/deployment-read-only.json) against an existing test file to inspect the connection, download it and compare actual bytes.
+
+| Deployment | API/documentation URL | Browser/sign-in URL | Verified authentication candidate |
+|---|---|---|---|
+| Standard cloud | `https://api.folderit.com` | `https://my.folderit.com` | `https://auth.folderit.com` |
+| Apollo | `https://api.apollo.folderit.com` | `https://apollo.folderit.com` | `https://auth.apollo.folderit.com` |
+| Custom-domain example | `https://api.my.chaffinch.com/#description/introduction` | `https://my.chaffinch.com/en/login/` | `https://auth.my.chaffinch.com` |
+
+The connector normalizes supported docs URLs and appends `/v2` once. It keeps the browser origin separate: a blank browser URL outside standard cloud omits generated links. API hostnames must follow `api.<deployment-domain>`. Public discovery must confirm the exact sibling auth issuer, `/oauth2/token` endpoint, client-credentials grant and Basic authentication method before any secret is sent. Redirects, mismatches and cloud fallback are refused.
+
+Saved sessions are bound to the API origin, client credentials and selected account. **Create a new credential for another deployment, account or replacement client key.** Do not edit a working credential to retarget live workflows. Existing **Standard Cloud OAuth2 (Existing Connections)** credentials and trigger checkpoints keep their original behavior. Switching a trigger to a new credential deliberately starts a new subscription: reconcile outstanding events before activation.
+
+API calls, selectors, pagination, polling, previews and binary operations use the credential's deployment. For workflows with a shared receipt ledger, map **Expected Connection Scope** in every action to `connectionScope` from the earlier Connection/Get step. This verifies the action's actual credential before any destination write, including when record IDs overlap across deployments. The candidate customer exports already include that check. Requests use n8n's enforced network filter, checked public DNS addresses and pinned TLS routing. Private hosts, IP literals, nonstandard ports, mixed private/public DNS, redirects and invalid certificates are refused. A private/on-premises deployment needs a separately supported network design; there is no proxy, certificate bypass or private-network toggle here.
+
+S3 transfers are anonymous. If this deployment returns another storage service, your administrator must supply its **exact public HTTPS origin** in the credential's **Additional Storage Origins**, one per line. Do not paste a signed URL or a wildcard. Storage destinations are validated and resolved independently; Folderit tokens/cookies are not forwarded. External source links and signed storage URLs are not rewritten into browser links or included in sample exports.
+
+**Download an exact version:** run **File → Get Versions**, copy the intended `versionUid`, then use **File → Download** with that Version UID. History is checked within a 1,000-version bound and actual downloaded size and any available historical SHA-256 are verified. Output distinguishes `downloadedVersionUid` from the current metadata's `versionUid`. **File → Download Preview** requires `previewAvailable=true` and verifies the returned PDF header. Both are binary actions for ordinary workflow nodes, not AI tools.
+
+Read requests may renew a rejected token once. Writes renew an expired cached token before sending, but a rejected or uncertain write is never automatically replayed. Inspect the destination and receipt before repeating an upload or workflow start.
 
 ## Example workflows
 
@@ -65,7 +95,7 @@ To import a file, download its raw JSON from GitHub, then open an n8n workflow's
 
 Connect **Folderit** to an **AI Agent** node's Tool input. Select a resource, operation and credential; keep the account and any required scope fixed. Use n8n's **Let the model define this parameter** control only for values the agent should supply. Each tool performs the operation you configure. Use a read operation for a read-only assistant; do not give an agent a write operation unless you intend to allow it.
 
-File Upload, Add Version and Download require binary workflow data and are excluded from the tool operation menu. They also fail before any API call if forced into a tool through edited workflow JSON. Use ordinary Folderit nodes for these actions.
+File Upload, Add Version, Download and Download Preview require binary workflow data and are excluded from the tool operation menu. They also fail before any API call if forced into a tool through edited workflow JSON. Use ordinary Folderit nodes for these actions.
 
 Import [document-roundtrip-with-ai.json](examples/document-roundtrip-with-ai.json) for a complete demonstration. Fill the two UIDs in Test Settings and select your Folderit credential in all five Folderit nodes. Install [Ollama](https://ollama.com/download), run `ollama pull qwen3.5:4b`, and select an Ollama credential with Base URL `http://127.0.0.1:11434` in Ollama Chat Model. No AI API key is needed when both apps run directly on the same computer. Docker/remote hosts need their own reachable Ollama address.
 
@@ -126,13 +156,13 @@ The development command runs a local n8n instance with the connector loaded. Ini
 
 ## Error handling and limits
 
-Writes are not automatically retried. A lost upload-completion response may mean the file was created: inspect the destination before repeating it. Failed part transfers attempt to abort unfinished uploads. A failed abort requires checking the upload state with Folderit. OAuth credentials are never attached to signed storage upload or download requests. The current storage implementation accepts only HTTPS Amazon S3 URLs; a different Folderit storage endpoint needs a reviewed compatibility update.
+Writes are not automatically retried. A lost upload-completion response may mean the file was created: inspect the destination before repeating it. Failed part transfers attempt to abort unfinished uploads. A failed abort requires checking the upload state with Folderit. OAuth credentials are never attached to signed storage upload or download requests. Legacy cloud credentials accept HTTPS Amazon S3 URLs. The new Folderit Connection also supports explicitly configured, independently validated public storage origins.
 
 If Folderit rejects a request, confirm the account UID, permissions and node inputs. For rate limiting, slow the workflow and retry reads after the server's waiting period. Use business-level document IDs or an external ledger to prevent duplicate uploads. n8n's execution history can contain document data returned by the API; configure retention appropriately.
 
 ## Validation status
 
-TypeScript build and n8n lint pass. All 61 tests pass: 46 connector tests and 15 customer-workflow tests. On 2026-10-27, fresh n8n Cloud 2.45.4 installed verified Folderit 0.4.0 and completed a real 75-byte UTF-8 folder/upload/read/download test with independent byte verification. Receipt-table setup also passed on Cloud. Native 2.42.5 tests covered repeated/overlapping synthetic uploads, interrupted-result blocking across restart, manual recovery, actual scheduled Folderit arrivals, expiry receipts and Error Trigger delivery to a local SMTP sink. Teams transport was stubbed; real mailbox/channel delivery remains to be validated. See [customer-workflow validation and limits](CUSTOMER-WORKFLOWS.md#validation-completed-on-27-october-2026). On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
+TypeScript build and n8n lint pass. The 0.4.0/customer-workflow baseline passed 61 tests; the 0.5.0 acceptance results and remaining live-deployment checks are recorded in RELEASE-CHECKS.txt. On 2026-10-27, fresh n8n Cloud 2.45.4 installed verified Folderit 0.4.0 and completed a real 75-byte UTF-8 folder/upload/read/download test with independent byte verification. Receipt-table setup also passed on Cloud. Native 2.42.5 tests covered repeated/overlapping synthetic uploads, interrupted-result blocking across restart, manual recovery, actual scheduled Folderit arrivals, expiry receipts and Error Trigger delivery to a local SMTP sink. Teams transport was stubbed; real mailbox/channel delivery remains to be validated. See [customer-workflow validation and limits](CUSTOMER-WORKFLOWS.md#validation-completed-on-27-october-2026). On 2026-10-10, native n8n 2.42.5 executed the complete round-trip workflow using the actual Folderit OAuth credential and built-in binary nodes. The downloaded 79-byte UTF-8 test content matched exactly, including its non-ASCII character; filename and MIME type were preserved. A separate read-only download also passed after the cached token was marked expired, verifying native token renewal.
 
 Version 0.2.0 passed native document search, integer metadata write/readback, unchanged-value suppression and clear verification. A separate live read confirmed cleanup. Account/folder/metadata picker calls and folder search passed through the live helper harness. Other metadata types have contract tests but have not all been exercised in live n8n workflows.
 
