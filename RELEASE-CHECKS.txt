@@ -4,6 +4,24 @@ Release state: 0.5.0 published on npm after protected GitHub review and npm
 security-key approval. n8n Cloud currently offers verified 0.4.0.
 Do not announce authenticated single-tenant support as already available on Cloud.
 
+Live standard-cloud workflow validation — 2026-10-28
+- n8n Cloud 2.46.0 / verified Folderit 0.4.0 completed real IMAP intake: two
+  permitted attachments, independently downloaded SHA-256 matches, excluded
+  extension absent, repeat without additional files or completed receipts.
+- A real scheduled arrival notice and UTC Due-date reminders reached Teams.
+  Exact-folder exclusion, upcoming/today/overdue cases, skipped future/missing
+  dates and repeated inputs passed. Independent Graph reads verified actual
+  message bodies, IDs and destination. A changed Due date with overlapping
+  workflow copies produced one additional reminder, with free normal locks.
+- A controlled send failure retained a pending receipt and held its isolated
+  lock. A fresh replay stopped after bounded waiting before another send.
+  The normal message IDs, receipts and free locks remained unchanged.
+- Current source has 92 passing regression tests. No provider credentials or
+  private destination IDs are distributed. Test workflows were left inactive.
+- Optional external SMTP and Outlook intake remain unverified. These examples
+  are not approved template-library listings; account-owner terms agreement
+  and the platform's review remain separate steps.
+
 Implemented
 - Separate Folderit Connection API credential alongside unchanged cloud OAuth2.
 - Public API/docs URL normalization, independent browser/login origin, exact
@@ -62,14 +80,15 @@ Remaining acceptance gates
   The exact packed archive also passed native legacy-cloud download, new
   connection exact-version download and PDF preview. Editor acceptance of
   the final credential and Apollo account/folder dropdowns also passed.
-- Existing 0.4 customer exports and public ZIP remain byte-identical to main;
-  0.5 deployment variants have their own directory and separate ZIP.
+- Historical customer ZIPs and npm archives remain unchanged. Current source
+  exports and the separate starter pack include the native IMAP header fix;
+  0.5 deployment variants have their own directory and separate historical ZIP.
 - n8n Creator Portal and Cloud still offer verified 0.4.0. The new 0.5.0
   update needs platform verification/propagation before Cloud acceptance.
   A credential-free read-only Cloud check is prepared; only standard demo
   credentials are authorized there.
-- Real mailbox, Teams and external SMTP provider delivery remains a separate
-  customer-workflow acceptance check. Private networks need a supported design.
+- Real IMAP and Teams checks passed as recorded above. Outlook intake and
+  external SMTP remain separate checks. Private networks need a supported design.
 
 Historical public-release and customer-workflow evidence follows.
 
