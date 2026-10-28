@@ -41,7 +41,7 @@ Credentials belong in n8n's credential store. Never put them in workflow JSON, t
 One package supports standard cloud and public single-tenant/custom-domain deployments through **Folderit Connection API** credentials. This candidate requires an n8n runtime exposing its secure egress helper; it has been tested locally on **n8n 2.42.5 / Node 24.21.0**. Missing capability fails before authentication. Installation on n8n Cloud remains subject to n8n's package verification and availability.
 
 1. Install the tested 0.5.0 package in a test instance. Published 0.4.0 does not contain these fields or operations.
-2. Open a **Folderit** node. Set **Connection Type → Folderit Connection (Cloud or Custom Deployment)**. In its credential selector, choose **Create new credential**.
+2. Open a **Folderit** node. In its **Credential** dropdown, choose **Create new credential**. At the top of the credential dialog, open **Setup credential** and choose **Folderit Connection (Cloud or Custom Deployment)**. The credential type must read **Folderit Connection API**. Some editor versions show this same choice as **Connection Type** in the node instead.
 3. Enter **API or Documentation URL**, the matching **Client ID** and **Client Secret**, and the deployment's **Browser or Sign-in URL**. The cloud API default is prefilled. Examples below are address configurations, not access credentials.
 4. Leave the credential's **Account UID** blank only when the client can access exactly one account. If verification reports several accounts, enter the exact intended UID before the first successful connection. It never chooses the first account. An explicit UID is checked directly without enumerating other accounts.
 5. Save the credential. Its first modal test asks for a bootstrap read: close the credential dialog, set **Resource → Connection**, **Operation → Get**, leave the node's Account UID blank and **Execute step**. This checks public routing, exact authentication metadata and actual account access. Afterward, reopening the credential's test performs an independent account read. This two-step setup is needed because n8n's credential-test context does not expose secure DNS resolution.
@@ -67,11 +67,13 @@ Read requests may renew a rejected token once. Writes renew an expired cached to
 
 ## Example workflows
 
-For **Folderit Tailor-plan users**, the [customer workflow guide](CUSTOMER-WORKFLOWS.md) provides six inactive, credential-free exports:
+For **Folderit Tailor-plan users**, the [current customer workflow guide](CUSTOMER-WORKFLOWS.md) provides six inactive, credential-free exports compatible with published connector 0.4.0:
 
 - IMAP and Outlook attachment archiving with saved receipts, SHA-256 verification of downloaded bytes and protection against overlapping runs.
 - New-document notifications and Due-date reminders in Microsoft Teams.
 - Shared failure emails and one-time receipt-table setup.
+
+The 0.5.0 candidate has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
 
 These use n8n Data Tables and require your own mailbox, Teams and SMTP connections. Read the setup and recovery instructions before activation. An uncertain external result holds processing for inspection; there are no automatic upload/message retries. They are downloadable examples, not listings in n8n's template library.
 

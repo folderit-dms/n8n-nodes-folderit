@@ -33,16 +33,25 @@ Native local acceptance (n8n 2.42.5, Node 24.21.0; isolated data directory)
   6c97817d1b23da50206af0ad330a5429fc845158fcc56fa7980ef4551851be36.
 - No Folderit record was created, updated or deleted for these read checks.
 
+Apollo acceptance (read-only)
+- Apollo authenticated native read-only acceptance passed with dedicated keys
+  entered by the maintainer only in isolated local n8n. Exact account read,
+  historical PDF download and Apollo browser link passed. Actual PDF bytes:
+  107,705; the SHA256 matched the approved fixture exactly. Detailed proof
+  remains in the local acceptance report.
+  The editor credential test, manual workflow execution and exact account/folder
+  selectors also passed. No customer records changed
+  and no Apollo credentials were copied to n8n Cloud.
+
 Remaining release/acceptance gates
-- Authenticated Apollo read-only testing is authorized, but the dedicated test
-  secret was not retained from Zapier. Re-entry is needed in local n8n; do not
-  extract a masked Zapier secret or save these credentials in n8n Cloud.
 - Chaffinch/custom-domain discovery passed; no authenticated customer-data
   credentials or permission are available. Do not label it authenticated proof.
 - Clean-source TypeScript build, official n8n lint and all 90 tests pass.
   The exact packed archive also passed native legacy-cloud download, new
   connection exact-version download and PDF preview. Editor acceptance of
-  the new credential remains separate from these native CLI checks.
+  the final credential and Apollo account/folder dropdowns also passed.
+- Existing 0.4 customer exports and public ZIP remain byte-identical to main;
+  0.5 deployment variants have their own directory and separate ZIP.
 - Update publication evidence only after staging/provenance, maintainer 2FA,
   actual npm publication and n8n Cloud availability/acceptance of the new build.
 - Real mailbox, Teams and external SMTP provider delivery remains a separate

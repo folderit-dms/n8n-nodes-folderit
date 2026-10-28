@@ -6,7 +6,7 @@
 - Verify exact public OIDC discovery before client-secret exchange; bind encrypted sessions to deployment, client and account. Pin public DNS/TLS routing and reject redirects, private destinations and credential forwarding to storage.
 - Route every action, selector, polling request and anonymous binary transfer through its selected deployment. Generate links only for the configured browser origin.
 - Add Connection/Get, exact-version downloads with byte verification, and PDF previews. Keep all binary operations unavailable as AI tools.
-- Scope new polling checkpoints and customer-workflow receipt keys by deployment and account. Preserve existing cloud credential defaults, checkpoints and cloud receipt keys.
+- Scope new polling checkpoints and deployment-workflow receipt keys by deployment and account. Keep the 0.4 customer bundle/exports intact and provide 0.5 variants separately under examples/deployments. Preserve existing cloud credential defaults, checkpoints and cloud receipt keys.
 - Add a credential-free read-only deployment example and installation/migration guidance. Public/custom authenticated acceptance and n8n Cloud eligibility remain explicit release checks.
 
 ### Customer workflow examples
