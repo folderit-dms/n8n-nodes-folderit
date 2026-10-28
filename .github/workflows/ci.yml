@@ -15,4 +15,8 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm test
+      - name: Check downloadable starter package
+        run: python3 scripts/check-library-package.py
+      - name: Test starter package checks against damaged exports
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
       - run: npm pack --dry-run
