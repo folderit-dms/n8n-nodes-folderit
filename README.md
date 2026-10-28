@@ -75,7 +75,7 @@ For **Folderit Tailor-plan users**, the [current customer workflow guide](CUSTOM
 
 Version 0.5.0 has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
 
-The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) provides three standard-cloud library candidates with embedded manual receipt-table setup, workflow images and recovery notes. [Setup and validation status](templates/README.md). Fresh import and table creation/reuse passed. Real IMAP intake, exact downloaded-byte verification and duplicate replay also passed in n8n Cloud; the current starter pack includes the native IMAP Message-ID correction. Real Teams arrival notices, Due-date reminders, replay suppression, a changed-date overlap and controlled send-failure blocking also passed in n8n Cloud, with independent reads of the actual messages. Optional external SMTP remains unverified. These workflows have not been submitted to the template library.
+The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) provides three standard-cloud library candidates with embedded manual receipt-table setup, workflow images and recovery notes. [Setup and validation status](templates/README.md). Fresh import and table creation/reuse passed. Real IMAP intake, exact downloaded-byte verification and duplicate replay also passed in n8n Cloud; the current starter pack includes the native IMAP Message-ID correction. Real Teams arrival notices, Due-date reminders, replay suppression, a changed-date overlap and controlled send-failure blocking also passed in n8n Cloud, with independent reads of the actual messages. Optional external SMTP remains unverified. The IMAP archive was submitted for human review on 28 October 2026; the two Teams candidates are ready and await the next submission slot. All three can be imported directly from the starter pack while library review proceeds.
 
 These use n8n Data Tables and require your own mailbox, Teams and SMTP connections. Read the setup and recovery instructions before activation. An uncertain external result holds processing for inspection; there are no automatic upload/message retries. They are downloadable examples, not listings in n8n's template library.
 
@@ -155,6 +155,15 @@ npm run lint
 npm test
 npm run dev -- --custom-user-folder ../work/n8n-folderit-local
 ```
+
+The downloadable starter package has a separate, read-only check (Python 3.9 or later):
+
+```sh
+python3 scripts/check-library-package.py
+python3 -m unittest discover -s tests -p 'test_*.py'
+```
+
+CI checks that the committed ZIP matches every source file, local guide/image links resolve, manifest details match, and all four included workflow exports remain inactive with public configuration placeholders and no saved credential references, trigger state or pinned results. These packaging checks do not replace live provider acceptance. After deliberately changing files in `templates/`, rebuild with `python3 scripts/build-library-package.py`, then rerun the checks before committing the ZIP.
 
 The development command runs a local n8n instance with the connector loaded. Initial n8n owner setup and real Folderit credentials are required for live testing. Keep the local instance bound to localhost. Do not commit its database or credentials.
 
