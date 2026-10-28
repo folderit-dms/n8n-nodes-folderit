@@ -54,11 +54,21 @@ def table(name, operation, filters=None, values=None, table_id=None, x=0, y=400)
 
 
 def save(filename, name, nodes, con, **settings):
+    services = [n for n in nodes if n['type'].startswith('n8n-nodes-folderit.')]
+    if services:
+        for n in services:
+            n['parameters']['authentication'] = 'folderitApi'
+            if n['type'] == 'n8n-nodes-folderit.folderit':
+                n['parameters']['expectedConnectionScope'] = "={{ $('Read connection context').first().json.connectionScope }}"
+        context = node('Read connection context', 'n8n-nodes-folderit.folderit', dict(authentication='folderitApi', resource='connection', operation='get', accountUid="={{ $('Settings').first().json.accountUid }}"), 360, y=640)
+        nodes.append(context)
+        con[context['name']] = con['Settings']
+        con['Settings'] = {'main': [[dict(node=context['name'],type='main',index=0)]]}
     obj = dict(name=name, nodes=nodes, connections=con, active=False, settings=dict(executionOrder='v1', saveDataErrorExecution='all', saveDataSuccessExecution='all', saveExecutionProgress=True, **settings), pinData={})
     (OUT / filename).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
 
 
-COMMON = f'''For **Folderit Tailor-plan users** with API credentials. Requires an n8n release with Data Table node v1.1; tested runtime: n8n 2.42.5. [Install and connect Folderit]({KB})
+COMMON = f'''For **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit]({KB})
 
 Run **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.
 
@@ -151,6 +161,10 @@ def setup():
 
 SPLIT = r'''
 const cfg=$('Settings').first().json;
+const connection=$('Read connection context').first().json;
+if(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');
+const deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];
+
 for(const key of ['accountUid','folderUid','ledgerTableId','mailboxScope']) if(typeof cfg[key]!=='string'||!cfg[key].trim()||cfg[key].startsWith('YOUR_')) throw new Error(`Replace ${key} in Settings.`);
 const allowed=String(cfg.allowedExtensions||'').split(',').map(x=>x.trim().toLowerCase().replace(/^\./,'')).filter(Boolean);
 if(!allowed.length)throw new Error('Set allowedExtensions, for example pdf,docx,txt.');
@@ -163,7 +177,7 @@ for(let i=0;i<mail.length;i++){
   const fileName=String(b.fileName||'').split(/[\\/]/).pop().replace(/[\x00-\x1f\x7f]/g,'').trim();
   const ext=fileName.includes('.')?fileName.split('.').pop().toLowerCase():'';
   if(!fileName||!allowed.includes(ext))continue;
-  out.push({json:{accountUid:cfg.accountUid,folderUid:cfg.folderUid,mailboxScope:cfg.mailboxScope,messageId,sourceAttachment:field,fileName},binary:{data:{...b,fileName}},pairedItem:{item:i}});
+  out.push({json:{apiOrigin:connection.apiOrigin,accountUid:cfg.accountUid,folderUid:cfg.folderUid,mailboxScope:cfg.mailboxScope,messageId,sourceAttachment:field,fileName},binary:{data:{...b,fileName}},pairedItem:{item:i}});
  }
 }
 return out;
@@ -184,7 +198,8 @@ return $input.all().map((x,i)=>{
  const binary=attachments[i]?.binary;
  if(!binary?.data)throw new Error('The source attachment binary is unavailable; no upload was attempted.');
  const j=x.json;
- return {json:{...j,receiptKey:JSON.stringify(['archive-v1',j.accountUid,j.folderUid,j.mailboxScope,j.messageId,j.sourceAttachment,j.fileName,j.payloadHash]),sourceRef:JSON.stringify([j.mailboxScope,j.messageId,j.sourceAttachment])},binary,pairedItem:{item:i}};
+ if(typeof j.apiOrigin!=='string'||!/^https:\/\/api\.[a-z0-9.-]+$/.test(j.apiOrigin))throw new Error('Verified deployment context is missing; no upload was attempted.');
+ return {json:{...j,receiptKey:JSON.stringify(['archive-v1',...(j.apiOrigin==='https://api.folderit.com'?[]:[j.apiOrigin]),j.accountUid,j.folderUid,j.mailboxScope,j.messageId,j.sourceAttachment,j.fileName,j.payloadHash]),sourceRef:JSON.stringify([j.mailboxScope,j.messageId,j.sourceAttachment])},binary,pairedItem:{item:i}};
 });""", 900),
              node('Process one item', 'n8n-nodes-base.splitInBatches', dict(batchSize=1, options={}), 1020, y=760, version=3)]
     con={}; chain(con,nodes)
@@ -196,7 +211,7 @@ if(!actual.uid || actual.name!==expected.fileName || actual.folderUid!==expected
 return [{json:{receiptRowId:expected.receiptRowId,targetUid:actual.uid},pairedItem:{item:0}}];'''
     receipt_flow(nodes,con,operations,check,upload=True)
     provider = 'Connect **Microsoft Outlook OAuth2** in the trigger. This uses delegated mailbox access. Use an intake mailbox/folder and test with one synthetic email. The template leaves read/unread status unchanged. The provider mailbox ID is a fallback when the RFC Message-ID is missing; moving mail may change provider IDs.' if outlook else 'Connect your IMAP credential in the trigger. Use a dedicated intake mailbox with TLS; existing unseen messages can be fetched on the first run. Read/unread status is unchanged. Messages without a stable Message-ID are held for inspection.'
-    nodes += [note('Archive attachments with saved receipts', COMMON+'\n'+provider+'\n\nSet all Settings placeholders, then select the same Folderit credential in Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.',width=1100,height=650),note('Recovery and limits', RECOVERY+'\n\nOne receipt key includes account, destination, mailbox, message ID, attachment field, filename and SHA-256. A new email can intentionally archive identical content. Every new upload is downloaded again and its bytes hashed before completion is recorded; this adds download traffic and avoids depending on asynchronously populated server hash metadata. Empty files and files over 100 MiB fail. Extension checks do not replace malware scanning. No automatic upload retries.',1180,width=1050,height=650)]
+    nodes += [note('Archive attachments with saved receipts', COMMON+'\n'+provider+'\n\nSet all Settings placeholders, then select the same Folderit Connection credential in Read connection context, Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.',width=1100,height=650),note('Recovery and limits', RECOVERY+'\n\nOne receipt key includes deployment, account, destination, mailbox, message ID, attachment field, filename and SHA-256. A new email can intentionally archive identical content. Every new upload is downloaded again and its bytes hashed before completion is recorded; this adds download traffic and avoids depending on asynchronously populated server hash metadata. Empty files and files over 100 MiB fail. Extension checks do not replace malware scanning. No automatic upload retries.',1180,width=1050,height=650)]
     save(CURRENT+'.json', 'Folderit — '+('Outlook' if outlook else 'Email')+' attachment archive with durable receipts',nodes,con)
 
 
@@ -215,21 +230,29 @@ def notifications():
     nodes=[node('New Folderit file','n8n-nodes-folderit.folderitTrigger',dict(accountUid='',event='newFile',recordUid='',pollTimes=dict(item=[dict(mode='everyMinute')]))),cfg(dict(accountUid='YOUR_ACCOUNT_UID',folderUid='',ledgerTableId='YOUR_LEDGER_TABLE_ID',teamId='YOUR_TEAM_ID',channelId='YOUR_CHANNEL_ID')),
            node('Read new document details','n8n-nodes-folderit.folderit',dict(resource='file',operation='get',accountUid="={{ $('Settings').first().json.accountUid }}",fileUid="={{ $('New Folderit file').item.json.entityUid }}"),480),
            code('Prepare arrival notifications', '''const cfg=$('Settings').first().json;
+const connection=$('Read connection context').first().json;
+if(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');
+const deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];
+
 for(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);
 const events=$('New Folderit file').all();const seen=new Set();const out=[];
 for(const [i,item]of $input.all().entries()){
  const e=events[i]?.json;if(!e?.auditUid||e.entityUid!==item.json.uid)throw new Error('File details do not match the audit event.');
  if(seen.has(e.auditUid))continue;seen.add(e.auditUid);if(cfg.folderUid&&item.json.folderUid!==cfg.folderUid)continue;
  const name=String(item.json.name||'').replace(/[\\r\\n]/g,' ');
- out.push({json:{receiptKey:JSON.stringify(['teams-arrival-v1',cfg.accountUid,e.auditUid,cfg.teamId,cfg.channelId]),sourceRef:e.auditUid,notificationText:`New document in Folderit: ${name}\\nDocument UID: ${item.json.uid}\\nAudit UID: ${e.auditUid}`},pairedItem:{item:i}});
+ out.push({json:{receiptKey:JSON.stringify(['teams-arrival-v1',...deploymentKey,cfg.accountUid,e.auditUid,cfg.teamId,cfg.channelId]),sourceRef:e.auditUid,notificationText:`New document in Folderit: ${name}\\nDocument UID: ${item.json.uid}\\nAudit UID: ${e.auditUid}`},pairedItem:{item:i}});
 }return out;''',720),node('Process one item','n8n-nodes-base.splitInBatches',dict(batchSize=1,options={}),1020,y=760,version=3)]
     con={};chain(con,nodes);receipt_flow(nodes,con,[teams_action()],TEAM_CHECK)
-    nodes += [note('New Folderit files → Microsoft Teams',COMMON+'\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit credential in Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.',width=1100,height=650),note('Activation, recovery and limits',RECOVERY+'\n\nActivate, then upload a synthetic document and inspect the actual Teams channel. Activation starts a baseline. Manual previews can notify about historical events. Poll at least hourly; interruptions over 23 hours or scan-limit errors need reconciliation. The ledger suppresses repeated audit UID/destination pairs; it does not repair missing audit history.',1180,width=1050,height=650)]
+    nodes += [note('New Folderit files → Microsoft Teams',COMMON+'\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit Connection credential in Read connection context and Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.',width=1100,height=650),note('Activation, recovery and limits',RECOVERY+'\n\nActivate, then upload a synthetic document and inspect the actual Teams channel. Activation starts a baseline. Manual previews can notify about historical events. Poll at least hourly; interruptions over 23 hours or scan-limit errors need reconciliation. The ledger suppresses repeated audit UID/destination pairs; it does not repair missing audit history.',1180,width=1050,height=650)]
     save(CURRENT+'.json','Folderit — New document notifications in Microsoft Teams',nodes,con)
 
 
 EXPIRY_CODE=r'''
 const cfg=$('Settings').first().json;
+const connection=$('Read connection context').first().json;
+if(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');
+const deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];
+
 for(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);
 const tokens=String(cfg.reminderDays??'').split(',').map(x=>x.trim());
 if(tokens.some(x=>!/^\d+$/.test(x)))throw new Error('reminderDays needs a non-empty comma-separated list of whole days.');
@@ -247,7 +270,7 @@ for(const [i,item]of $input.all().entries()){
  if(milestone===null||milestone===undefined)continue;
  if(!f.uid||f.type!=='file')throw new Error('Expected a Folderit file with UID.');
  const name=String(f.name||'').replace(/[\r\n]/g,' ');
- out.push({json:{receiptKey:JSON.stringify(['teams-expiry-v1',cfg.accountUid,f.uid,f.dueDate,milestone,cfg.teamId,cfg.channelId]),sourceRef:JSON.stringify([f.uid,f.dueDate,milestone]),notificationText:`Folderit expiry reminder: ${name}\nDue date: ${f.dueDate}\nDays remaining: ${days}\nDocument UID: ${f.uid}\nReminder milestone: ${milestone} days`},pairedItem:{item:i}});
+ out.push({json:{receiptKey:JSON.stringify(['teams-expiry-v1',...deploymentKey,cfg.accountUid,f.uid,f.dueDate,milestone,cfg.teamId,cfg.channelId]),sourceRef:JSON.stringify([f.uid,f.dueDate,milestone]),notificationText:`Folderit expiry reminder: ${name}\nDue date: ${f.dueDate}\nDays remaining: ${days}\nDocument UID: ${f.uid}\nReminder milestone: ${milestone} days`},pairedItem:{item:i}});
 }return out;
 '''
 
@@ -260,7 +283,7 @@ def expiry():
            node('Read document expiry dates','n8n-nodes-folderit.folderit',dict(resource='file',operation='get',accountUid="={{ $('Settings').first().json.accountUid }}",fileUid='={{ $json.uid }}'),720),
            code('Select due reminders',EXPIRY_CODE,960),node('Process one item','n8n-nodes-base.splitInBatches',dict(batchSize=1,options={}),1020,y=760,version=3)]
     con={};chain(con,nodes);receipt_flow(nodes,con,[teams_action()],TEAM_CHECK)
-    nodes += [note('Contract and certificate expiry reminders',COMMON+'\nUse a dedicated folder containing the documents to track. Set each document’s standard Folderit **Due date** to its actual expiry/renewal date. This template reads that field, not arbitrary custom metadata or dates inside document text. It does not decide legal expiry dates.\n\nSet Settings UIDs, team/channel and reminderDays. Connect Folderit in both read nodes and delegated Microsoft Teams OAuth2 in the send node. No Folderit records are changed. Schedule defaults to 09:00 UTC; date calculations use UTC calendar days.',width=1100,height=650),note('Reminder behavior and recovery',RECOVERY+'\n\nDefault milestones are 30, 7, 1 and 0 days. The first run within a window sends that window’s reminder (for example, 20 days left sends the 30-day reminder). It does not send every missed milestone. The 0-day reminder can be sent once through 7 days overdue; adjust overdueDays. No due date means no reminder. Invalid dates fail visibly. One receipt is stored per account/document/due date/milestone/destination. A changed due date starts a new reminder cycle. This folder is not traversed recursively.',1180,width=1050,height=650)]
+    nodes += [note('Contract and certificate expiry reminders',COMMON+'\nUse a dedicated folder containing the documents to track. Set each document’s standard Folderit **Due date** to its actual expiry/renewal date. This template reads that field, not arbitrary custom metadata or dates inside document text. It does not decide legal expiry dates.\n\nSet Settings UIDs, team/channel and reminderDays. Connect the same Folderit Connection credential in Read connection context and both read nodes and delegated Microsoft Teams OAuth2 in the send node. No Folderit records are changed. Schedule defaults to 09:00 UTC; date calculations use UTC calendar days.',width=1100,height=650),note('Reminder behavior and recovery',RECOVERY+'\n\nDefault milestones are 30, 7, 1 and 0 days. The first run within a window sends that window’s reminder (for example, 20 days left sends the 30-day reminder). It does not send every missed milestone. The 0-day reminder can be sent once through 7 days overdue; adjust overdueDays. No due date means no reminder. Invalid dates fail visibly. One receipt is stored per account/document/due date/milestone/destination. A changed due date starts a new reminder cycle. This folder is not traversed recursively.',1180,width=1050,height=650)]
     save(CURRENT+'.json','Folderit — Contract and certificate expiry reminders to Teams',nodes,con,timezone='UTC')
 
 
