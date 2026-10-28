@@ -37,6 +37,27 @@ test('email split handles multiple attachments and filters unapproved file types
   const result = run(archive, 'Split and validate attachments', [], refs);
   assert.equal(result.length, 2); assert.equal(result[0].binary.data.data, 'YQ=='); assert.equal(result[1].json.fileName, 'two.pdf');
 });
+test('native IMAP simple output uses the RFC Message-ID and keeps receipt identity across mailbox UID changes', () => {
+  const split = uid => run(archive, 'Split and validate attachments', [], {
+    ...refs, 'New email with attachments': [{ ...message, json: {
+      metadata: { 'message-id': ' <synthetic-imap@folderit.invalid> ' }, attributes: { uid },
+    } }],
+  });
+  const first = split(1); const moved = split(9);
+  assert.equal(first.length, 2);
+  assert.equal(first[0].json.messageId, '<synthetic-imap@folderit.invalid>');
+  const key = item => run(archive, 'Build attachment receipt keys', [{ json: { ...item.json, payloadHash: 'a'.repeat(64) } }], {
+    'Split and validate attachments': [item],
+  })[0].json.receiptKey;
+  assert.equal(key(first[0]), key(moved[0]));
+});
+test('a mailbox UID or malformed Message-ID alone cannot authorize archiving', () => {
+  for (const metadata of [{}, { 'message-id': {} }, { 'message-id': '  ' }]) {
+    assert.throws(() => run(archive, 'Split and validate attachments', [], {
+      ...refs, 'New email with attachments': [{ ...message, json: { metadata, attributes: { uid: 1 } } }],
+    }), /stable/);
+  }
+});
 test('email with no attachments produces no work; multiple messages preserve item pairing', () => {
   assert.equal(run(archive, 'Split and validate attachments', [], { ...refs, 'New email with attachments': [{ json: {} }] }).length, 0);
   const result = run(archive, 'Split and validate attachments', [], { ...refs, 'New email with attachments': [message, message] });
