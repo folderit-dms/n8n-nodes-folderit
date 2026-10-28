@@ -1,0 +1,35 @@
+[
+  {
+    "file": "archive-imap-attachments.json",
+    "name": "Archive IMAP email attachments in Folderit with verified files and saved receipts",
+    "nodes": 44,
+    "requirements": [
+      "Folderit Tailor plan and API access",
+      "n8n Data Table v1.1",
+      "provider credentials"
+    ],
+    "acceptance": "provider checks pending; not submitted to n8n library"
+  },
+  {
+    "file": "notify-teams-on-new-documents.json",
+    "name": "Notify a Microsoft Teams channel about new Folderit documents with saved receipts",
+    "nodes": 40,
+    "requirements": [
+      "Folderit Tailor plan and API access",
+      "n8n Data Table v1.1",
+      "provider credentials"
+    ],
+    "acceptance": "provider checks pending; not submitted to n8n library"
+  },
+  {
+    "file": "remind-teams-about-due-dates.json",
+    "name": "Send Folderit document due-date reminders to Microsoft Teams with saved receipts",
+    "nodes": 41,
+    "requirements": [
+      "Folderit Tailor plan and API access",
+      "n8n Data Table v1.1",
+      "provider credentials"
+    ],
+    "acceptance": "provider checks pending; not submitted to n8n library"
+  }
+]
