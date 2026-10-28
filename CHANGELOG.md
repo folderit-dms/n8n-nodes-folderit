@@ -1,5 +1,12 @@
 # Changelog
 
+## Live workflow-provider validation — 2026-10-28
+
+- Verify a real scheduled Folderit arrival notice in Microsoft Teams, including exact-folder filtering and replay without another message.
+- Verify real Teams reminders for upcoming, due-today and overdue documents; skip far-future and missing dates. Replays preserve message identities. A changed Due date starts one new cycle even with overlapping workflow copies sharing the receipt table.
+- Verify a controlled send failure leaves its receipt pending and its processing lock held. A fresh replay stops after bounded waiting without repeating the destination action. Normal workflow ledgers remain free and unchanged.
+- Update starter-pack validation notes. Optional external SMTP delivery and n8n template-library approval remain separate checks. No connector runtime or npm-version change.
+
 ## Workflow template correction — 2026-10-28
 
 - Read the RFC Message-ID from native n8n IMAP `metadata["message-id"]`, including when a message is moved and receives a different mailbox UID. Reject missing or malformed identifiers before processing.

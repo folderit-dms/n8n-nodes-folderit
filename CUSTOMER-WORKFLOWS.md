@@ -93,7 +93,18 @@ An alert workflow can fail too. Check SMTP delivery, executions and retention in
 
 Before enabling real data, verify credentials, permissions, actual destination output, repeat handling, a controlled failure and its alert, and a restart/recovery case. Package approval alone does not prove your end-to-end workflow. Delivery through your real Microsoft/IMAP/SMTP connections must be tested with your chosen accounts. Cloud round-trip and receipt-table setup checks do not prove every scheduled customer workflow.
 
-## Validation completed on 27 October 2026
+## Validation completed on 28 October 2026
+
+The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) includes its receipt-table setup inside each main workflow. Its IMAP, Teams arrival and Teams Due-date workflows passed real-provider tests on n8n Cloud 2.46.0 with verified Folderit 0.4.0:
+
+- Two permitted IMAP attachments were independently downloaded and matched by SHA-256; a disallowed extension was absent. Repeating the same email added no files or receipts. The current source handles native IMAP `metadata["message-id"]`.
+- A scheduled arrival notice reached the exact Teams destination. The other test folder's arrivals were excluded. Independent Graph reads verified the actual message identity, document/audit IDs and destination.
+- Upcoming, due-today and overdue records produced the expected reminders. Far-future and missing dates were skipped. Replays preserved message IDs. Changing one Due date created one new reminder cycle during overlapping runs sharing the same receipts.
+- A controlled send failure retained a pending receipt and held its isolated lock. A fresh replay stopped after bounded waiting without another send. Normal workflow receipts and locks remained unchanged and free.
+
+The current regression suite passes 92 tests. Optional external SMTP and Outlook intake remain unverified. These are downloadable examples, not approved n8n template-library listings, and the checks above do not prove every account, permission or runtime. Test your own connections and recovery process before activation.
+
+## Historical validation completed on 27 October 2026
 
 - Build, official n8n lint and all 61 tests passed from a clean source copy (46 connector tests and 15 customer-workflow tests).
 - Native n8n 2.42.5 processed real synthetic Folderit uploads with downloaded-byte verification. Repeating the same input produced no additional files. Two overlapping runs produced two files total for the same two attachments.
