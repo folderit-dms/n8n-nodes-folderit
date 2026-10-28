@@ -6,7 +6,7 @@ import type {
 	INodePropertyOptions,
 } from 'n8n-workflow';
 import { NodeOperationError, UserError } from 'n8n-workflow';
-import { collection, request, validateUid } from './api';
+import { collection, request, resolveAccount, validateUid } from './api';
 import type { Context } from './api';
 
 export async function paged(
@@ -88,7 +88,7 @@ export async function getWorkflows(this: ILoadOptionsFunctions) {
 	return workflowOptions(
 		await available(
 			this,
-			validateUid(String(this.getNodeParameter('accountUid'))),
+			await resolveAccount(this, this.getNodeParameter('accountUid')),
 			validateUid(String(this.getNodeParameter('workflowRecordUid'))),
 		),
 	);
