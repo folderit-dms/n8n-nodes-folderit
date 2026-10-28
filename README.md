@@ -75,6 +75,8 @@ For **Folderit Tailor-plan users**, the [current customer workflow guide](CUSTOM
 
 Version 0.5.0 has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
 
+The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) provides three standard-cloud library candidates with embedded manual receipt-table setup, workflow images and recovery notes. [Setup and validation status](templates/README.md). Fresh import and table creation/reuse passed; actual IMAP/Teams provider acceptance and template-library submission are pending.
+
 These use n8n Data Tables and require your own mailbox, Teams and SMTP connections. Read the setup and recovery instructions before activation. An uncertain external result holds processing for inspection; there are no automatic upload/message retries. They are downloadable examples, not listings in n8n's template library.
 
 The three simpler starters remain available for learning. Three downloadable starter workflows include setup notes and configurable placeholders. They import inactive and contain no saved credentials or pinned results. Configure and test them in your own instance before activation; they are not yet published in n8n's template library.

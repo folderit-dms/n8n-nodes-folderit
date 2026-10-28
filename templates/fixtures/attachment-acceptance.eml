@@ -1,0 +1,44 @@
+From: Synthetic sender <sender@example.invalid>
+To: YOUR_TEST_MAILBOX@example.invalid
+Subject: SYNTHETIC Folderit n8n attachment acceptance
+Message-ID: <folderit-n8n-library-20261028@example.invalid>
+Date: Wed, 28 Oct 2026 12:00:00 +0200
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============7511884292284994616=="
+
+--===============7511884292284994616==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+Synthetic test only. Replace the recipient with your dedicated test mailbox b=
+efore sending. Two .txt attachments should be archived; the .exe-named text f=
+ixture should be skipped.
+
+--===============7511884292284994616==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename*=utf-8''Synthetic%20invoice%20%C3%84%C3%96%C3%9C.txt
+MIME-Version: 1.0
+
+Rm9sZGVyaXQgbjhuIHRlbXBsYXRlIHRlc3Qg4oCUIHN5bnRoZXRpYyBpbnZvaWNlLgpObyBjdXN0
+b21lciBpbmZvcm1hdGlvbi4K
+
+--===============7511884292284994616==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="Synthetic terms.txt"
+MIME-Version: 1.0
+
+Rm9sZGVyaXQgbjhuIHRlbXBsYXRlIHRlc3QuClN5bnRoZXRpYyB0ZXJtcyBvbmx5Lgo=
+
+--===============7511884292284994616==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="blocked.exe"
+MIME-Version: 1.0
+
+U1lOVEhFVElDIHRleHQgYXR0YWNobWVudCB3aXRoIGEgZGlzYWxsb3dlZCBmaWxlbmFtZSBleHRl
+bnNpb24uCg==
+
+--===============7511884292284994616==--

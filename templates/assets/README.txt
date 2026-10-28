@@ -1,0 +1,1 @@
+Native n8n editor previews of the exact workflow graphs, with the local receipt-table setup branch shown separately. The green setup path confirms only the manual table setup; mailbox and Teams delivery still require dedicated provider acceptance. No customer data or credentials appear in these images.
