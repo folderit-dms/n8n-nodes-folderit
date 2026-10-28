@@ -40,7 +40,9 @@ Remaining release/acceptance gates
 - Chaffinch/custom-domain discovery passed; no authenticated customer-data
   credentials or permission are available. Do not label it authenticated proof.
 - Clean-source TypeScript build, official n8n lint and all 90 tests pass.
-  Verify the exact packed archive in the editor before release.
+  The exact packed archive also passed native legacy-cloud download, new
+  connection exact-version download and PDF preview. Editor acceptance of
+  the new credential remains separate from these native CLI checks.
 - Update publication evidence only after staging/provenance, maintainer 2FA,
   actual npm publication and n8n Cloud availability/acceptance of the new build.
 - Real mailbox, Teams and external SMTP provider delivery remains a separate
