@@ -131,3 +131,28 @@ test('download rejects unexpected redirects without leaking signed URLs',async()
  }
  assert.equal(downloads,0);
 });
+
+test('exact-version download selects bounded history and verifies the actual bytes',async()=>{
+ const crypto=require('node:crypto');const bytes=Buffer.from('historical bytes');
+ const ctx=context({resource:'file',operation:'download',accountUid:'account',fileUid:'file',versionUid:'exact-version',outputBinaryField:'data'},o=>{
+  if(o.url.endsWith('/versions'))return [{uid:'exact-version',fileUid:'file',size:bytes.length,hash:{sha256:crypto.createHash('sha256').update(bytes).digest('hex')}}];
+  if(o.url.endsWith('/download')){assert(o.url.endsWith('/files/file/versions/exact-version/download'));return {statusCode:302,headers:{location:'https://bucket.s3.amazonaws.com/opaque'}};}
+  return {uid:'file',type:'file',name:'history.txt',versionUid:'current-version'};
+ },async()=>bytes);
+ ctx.helpers.prepareBinaryData=async data=>({data:data.toString('base64')});const [[out]]=await Folderit.prototype.execute.call(ctx);
+ assert.equal(out.json.downloadedVersionUid,'exact-version');assert.equal(out.json.versionUid,'current-version');assert.equal(out.json.downloadedSize,bytes.length);assert.equal(out.json.downloadedSha256,crypto.createHash('sha256').update(bytes).digest('hex'));
+});
+test('wrong exact-version bytes fail and an absent version makes no download request',async()=>{
+ for(const rows of [[],[{uid:'exact',fileUid:'file',size:999,hash:{sha256:'wrong'}}]]){
+  let storage=0;const c=context({resource:'file',operation:'download',accountUid:'a',fileUid:'file',versionUid:'exact',outputBinaryField:'data'},o=>o.url.endsWith('/versions')?rows:o.url.endsWith('/download')?{statusCode:302,headers:{location:'https://bucket.s3.amazonaws.com/opaque'}}:{uid:'file'},async()=>{storage++;return Buffer.from('wrong');});c.helpers.prepareBinaryData=async data=>({data:data.toString('base64')});
+  await assert.rejects(Folderit.prototype.execute.call(c),rows.length?/download failed/:/exact version/);assert.equal(storage,rows.length?1:0);
+ }
+});
+test('PDF preview requires availability and actual PDF bytes, and uses anonymous storage',async()=>{
+ for(const [available,bytes,pass] of [[false,Buffer.from('%PDF-1.4\nsynthetic'),false],[true,Buffer.from('not pdf'),false],[true,Buffer.from('%PDF-1.4\nsynthetic'),true]]){
+  let storage=0;const c=context({resource:'file',operation:'preview',accountUid:'a',fileUid:'file',outputBinaryField:'preview'},o=>o.url.endsWith('/preview')?{statusCode:302,headers:{location:'https://bucket.s3.amazonaws.com/preview'}}:{uid:'file',name:'contract.docx',previewAvailable:available},async o=>{storage++;assert.equal(o.headers,undefined);return bytes;});c.helpers.prepareBinaryData=async(data,name,mime)=>({data:data.toString('base64'),fileName:name,mimeType:mime});
+  if(pass){const [[o]]=await Folderit.prototype.execute.call(c);assert.equal(o.binary.preview.fileName,'contract.pdf');assert.equal(o.binary.preview.mimeType,'application/pdf');assert.equal(o.json.downloadedPreview,true);}
+  else await assert.rejects(Folderit.prototype.execute.call(c),available?/download failed/:/available PDF/);
+  assert.equal(storage,available?1:0);
+ }
+});
