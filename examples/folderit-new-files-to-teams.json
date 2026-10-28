@@ -20,7 +20,8 @@
               "mode": "everyMinute"
             }
           ]
-        }
+        },
+        "authentication": "folderitApi"
       }
     },
     {
@@ -51,7 +52,9 @@
         "resource": "file",
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
-        "fileUid": "={{ $('New Folderit file').item.json.entityUid }}"
+        "fileUid": "={{ $('New Folderit file').item.json.entityUid }}",
+        "authentication": "folderitApi",
+        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
       }
     },
     {
@@ -65,7 +68,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const cfg=$('Settings').first().json;\nfor(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);\nconst events=$('New Folderit file').all();const seen=new Set();const out=[];\nfor(const [i,item]of $input.all().entries()){\n const e=events[i]?.json;if(!e?.auditUid||e.entityUid!==item.json.uid)throw new Error('File details do not match the audit event.');\n if(seen.has(e.auditUid))continue;seen.add(e.auditUid);if(cfg.folderUid&&item.json.folderUid!==cfg.folderUid)continue;\n const name=String(item.json.name||'').replace(/[\\r\\n]/g,' ');\n out.push({json:{receiptKey:JSON.stringify(['teams-arrival-v1',cfg.accountUid,e.auditUid,cfg.teamId,cfg.channelId]),sourceRef:e.auditUid,notificationText:`New document in Folderit: ${name}\\nDocument UID: ${item.json.uid}\\nAudit UID: ${e.auditUid}`},pairedItem:{item:i}});\n}return out;"
+        "jsCode": "const cfg=$('Settings').first().json;\nconst connection=$('Read connection context').first().json;\nif(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');\nconst deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];\n\nfor(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);\nconst events=$('New Folderit file').all();const seen=new Set();const out=[];\nfor(const [i,item]of $input.all().entries()){\n const e=events[i]?.json;if(!e?.auditUid||e.entityUid!==item.json.uid)throw new Error('File details do not match the audit event.');\n if(seen.has(e.auditUid))continue;seen.add(e.auditUid);if(cfg.folderUid&&item.json.folderUid!==cfg.folderUid)continue;\n const name=String(item.json.name||'').replace(/[\\r\\n]/g,' ');\n out.push({json:{receiptKey:JSON.stringify(['teams-arrival-v1',...deploymentKey,cfg.accountUid,e.auditUid,cfg.teamId,cfg.channelId]),sourceRef:e.auditUid,notificationText:`New document in Folderit: ${name}\\nDocument UID: ${item.json.uid}\\nAudit UID: ${e.auditUid}`},pairedItem:{item:i}});\n}return out;"
       }
     },
     {
@@ -829,7 +832,7 @@
         -170
       ],
       "parameters": {
-        "content": "# New Folderit files → Microsoft Teams\nFor **Folderit Tailor-plan users** with API credentials. Requires an n8n release with Data Table node v1.1; tested runtime: n8n 2.42.5. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit credential in Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.",
+        "content": "# New Folderit files → Microsoft Teams\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit Connection credential in Read connection context and Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.",
         "width": 1100,
         "height": 650
       }
@@ -847,6 +850,22 @@
         "content": "# Activation, recovery and limits\nThe table contains a single processing lock plus durable receipts. Only a run owning the lock may perform an upload or send a message. A completed receipt suppresses repeats for its key. The lock has NO automatic expiry: a crash, failed readback or uncertain API response keeps work blocked for inspection.\n\nCompeting runs wait and retry lock acquisition for about one minute; uploads/messages are never automatically retried. If a run still reports a busy lock, retry that FAILED execution after the owner finishes. Do not discard its input. On other failures, inspect saved executions, receipt state and the actual destination. Never clear the lock while its owner may still be running. Reconcile pending rows before clearing it. See CUSTOMER-WORKFLOWS.md for recovery steps.\n\nThis is duplicate protection with explicit recovery, not an exactly-once guarantee across n8n and an external service. Keep failed execution/binary data long enough for recovery and monitor the failure-alert workflow itself. Production provider delivery and fresh Cloud behavior require validation in your environment.\n\nActivate, then upload a synthetic document and inspect the actual Teams channel. Activation starts a baseline. Manual previews can notify about historical events. Poll at least hourly; interruptions over 23 hours or scan-limit errors need reconciliation. The ledger suppresses repeated audit UID/destination pairs; it does not repair missing audit history.",
         "width": 1050,
         "height": 650
+      }
+    },
+    {
+      "id": "59377635-23f7-5fa6-bac6-a354086bf776",
+      "name": "Read connection context",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        360,
+        640
+      ],
+      "parameters": {
+        "authentication": "folderitApi",
+        "resource": "connection",
+        "operation": "get",
+        "accountUid": "={{ $('Settings').first().json.accountUid }}"
       }
     }
   ],
@@ -866,7 +885,7 @@
       "main": [
         [
           {
-            "node": "Read new document details",
+            "node": "Read connection context",
             "type": "main",
             "index": 0
           }
@@ -1124,6 +1143,17 @@
         [
           {
             "node": "Process one item",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read connection context": {
+      "main": [
+        [
+          {
+            "node": "Read new document details",
             "type": "main",
             "index": 0
           }

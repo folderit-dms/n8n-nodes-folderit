@@ -1,0 +1,149 @@
+{
+  "name": "Folderit — Read-only deployment check",
+  "nodes": [
+    {
+      "id": "2b484d1f-19fa-5ac7-bff1-8677dc08c289",
+      "name": "Start read-only check",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        350
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "511e72f6-c990-564e-990b-0d70d3b3b309",
+      "name": "Read connection context",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        230,
+        350
+      ],
+      "parameters": {
+        "authentication": "folderitApi",
+        "resource": "connection",
+        "operation": "get",
+        "accountUid": ""
+      }
+    },
+    {
+      "id": "18bcfc1b-bea3-5723-b3d9-52118b1be959",
+      "name": "Existing file settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        350
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"fileUid\": \"YOUR_EXISTING_TEST_FILE_UID\",\n  \"versionUid\": \"\"\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "01a7d67c-2c1c-5bd3-90dd-557165ad24a4",
+      "name": "Read existing document",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        690,
+        350
+      ],
+      "parameters": {
+        "authentication": "folderitApi",
+        "resource": "file",
+        "operation": "get",
+        "accountUid": "",
+        "fileUid": "={{ $json.fileUid }}"
+      }
+    },
+    {
+      "id": "528d4551-17cf-516f-b54c-c88f8cc91b14",
+      "name": "Download existing document",
+      "type": "n8n-nodes-folderit.folderit",
+      "typeVersion": 1,
+      "position": [
+        920,
+        350
+      ],
+      "parameters": {
+        "authentication": "folderitApi",
+        "resource": "file",
+        "operation": "download",
+        "accountUid": "",
+        "fileUid": "={{ $('Existing file settings').first().json.fileUid }}",
+        "versionUid": "={{ $('Existing file settings').first().json.versionUid }}",
+        "outputBinaryField": "document"
+      }
+    },
+    {
+      "id": "a6277f2c-6165-56f6-932f-ae04fb94e251",
+      "name": "Instructions",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -20
+      ],
+      "parameters": {
+        "content": "# Read-only deployment check (0.5.0 candidate)\nUse a local test instance with the matching 0.5.0 package and a Folderit Connection credential. [Setup](https://github.com/folderit-dms/n8n-nodes-folderit#deployment-connections-050-candidate).\n\nSelect the SAME credential in all three Folderit nodes. Its exact account is used when Account UID is blank. Enter an existing, authorized synthetic test file UID in Existing file settings. Optional versionUid selects a known historical version. Do not enter secrets in Settings. Execute the workflow; inspect Read connection context, the file details, then the Download existing document binary tab. Download the output and compare its actual bytes with the known source.\n\nThis workflow creates or changes no Folderit record. It saves execution/binary data in your n8n instance according to its retention settings. No preview is assumed available. For PDF preview testing, duplicate the download node, choose File → Download Preview and use a file with previewAvailable=true. Never send signed storage URLs in logs or screenshots.",
+        "width": 1140,
+        "height": 310
+      }
+    }
+  ],
+  "connections": {
+    "Start read-only check": {
+      "main": [
+        [
+          {
+            "node": "Read connection context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read connection context": {
+      "main": [
+        [
+          {
+            "node": "Existing file settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Existing file settings": {
+      "main": [
+        [
+          {
+            "node": "Read existing document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read existing document": {
+      "main": [
+        [
+          {
+            "node": "Download existing document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
