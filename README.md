@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Release status:** n8n approved and published Folderit as a verified community node on **27 October 2026**. [Version 0.4.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0), with GitHub Actions provenance and native AI-agent tool support. The approval email confirms n8n Cloud availability. A fresh n8n Cloud 2.45.4 instance passed the standard-cloud round trip and receipt-table setup on 27 October 2026. The deployment-aware 0.5.0 changes in this branch are a release candidate and are not yet published or verified on n8n Cloud.
+**Release status:** [Version 0.5.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.5.0) as of **28 October 2026**, with GitHub Actions provenance. All 68 registry files match the tested build, and n8n's official scanner passed its security, source and provenance checks. Standard-cloud and Apollo read-only acceptance passed locally. n8n Cloud currently offers verified **0.4.0**; the 0.5.0 update still needs n8n's verification and propagation before Cloud acceptance can run. Existing 0.4.0 Cloud workflows and downloads remain supported.
 
 ## Get started
 
@@ -17,8 +17,8 @@ A Creator Portal account is for publishing integrations. It is separate from the
 
 ## Operations
 
-- File: get details and metadata; list or search files; upload a binary file; add a file version; list version history; download current or exact-version bytes; download an available PDF preview. Exact-version downloads and previews are new in the 0.5.0 candidate.
-- Connection: verify the selected account and return non-secret API/browser/account context (0.5.0 candidate).
+- File: get details and metadata; list or search files; upload a binary file; add a file version; list version history; download current or exact-version bytes; download an available PDF preview. Exact-version downloads and previews are new in 0.5.0.
+- Connection: verify the selected account and return non-secret API/browser/account context (0.5.0).
 - Folder: create a child folder; get details; list or search folders.
 - Metadata: list field definitions; read record metadata; validate, update or clear one field.
 - Workflow: list available manual starts; queue a selected workflow; read all progress runs.
@@ -34,20 +34,20 @@ Delete operations and approval-response actions are not included. Workflow task 
 
 Folderit currently documents API access as a Tailor-plan feature. Obtain a client ID, client secret and account UID from your Folderit administrator. Create a **Folderit OAuth2 API** credential in n8n and enter the client ID and secret. n8n handles the OAuth2 client-credentials exchange at `https://auth.folderit.com/oauth2/token`. Choose the account in the node, or enter its UID using an expression.
 
-Credentials belong in n8n's credential store. Never put them in workflow JSON, this repository or npm. Published version 0.4.0 connects to the public `api.folderit.com` service. The 0.5.0 candidate adds the separate connection described below; existing OAuth2 credentials retain their cloud routing and account selection.
+Credentials belong in n8n's credential store. Never put them in workflow JSON, this repository or npm. Published version 0.4.0 connects to the public `api.folderit.com` service. Version 0.5.0 adds the separate connection described below; existing OAuth2 credentials retain their cloud routing and account selection.
 
-## Deployment connections (0.5.0 candidate)
+## Deployment connections (0.5.0)
 
-One package supports standard cloud and public single-tenant/custom-domain deployments through **Folderit Connection API** credentials. This candidate requires an n8n runtime exposing its secure egress helper; it has been tested locally on **n8n 2.42.5 / Node 24.21.0**. Missing capability fails before authentication. Installation on n8n Cloud remains subject to n8n's package verification and availability.
+One package supports standard cloud and public single-tenant/custom-domain deployments through **Folderit Connection API** credentials. This connection requires an n8n runtime exposing its secure egress helper; it has been tested locally on **n8n 2.42.5 / Node 24.21.0**. Missing capability fails before authentication. Installation on n8n Cloud remains subject to n8n's package verification and availability.
 
-1. Install the tested 0.5.0 package in a test instance. Published 0.4.0 does not contain these fields or operations.
+1. Install published `n8n-nodes-folderit@0.5.0` in a self-hosted test instance. Published 0.4.0 does not contain these fields or operations.
 2. Open a **Folderit** node. In its **Credential** dropdown, choose **Create new credential**. At the top of the credential dialog, open **Setup credential** and choose **Folderit Connection (Cloud or Custom Deployment)**. The credential type must read **Folderit Connection API**. Some editor versions show this same choice as **Connection Type** in the node instead.
 3. Enter **API or Documentation URL**, the matching **Client ID** and **Client Secret**, and the deployment's **Browser or Sign-in URL**. The cloud API default is prefilled. Examples below are address configurations, not access credentials.
 4. Leave the credential's **Account UID** blank only when the client can access exactly one account. If verification reports several accounts, enter the exact intended UID before the first successful connection. It never chooses the first account. An explicit UID is checked directly without enumerating other accounts.
 5. Save the credential. Its first modal test asks for a bootstrap read: close the credential dialog, set **Resource → Connection**, **Operation → Get**, leave the node's Account UID blank and **Execute step**. This checks public routing, exact authentication metadata and actual account access. Afterward, reopening the credential's test performs an independent account read. This two-step setup is needed because n8n's credential-test context does not expose secure DNS resolution.
 6. Select that same credential in each Folderit action and trigger in the workflow. Blank node Account UID uses its verified account; a different UID is rejected. Run [deployment-read-only.json](examples/deployment-read-only.json) against an existing test file to inspect the connection, download it and compare actual bytes.
 
-| Deployment | API/documentation URL | Browser/sign-in URL | Verified authentication candidate |
+| Deployment | API/documentation URL | Browser/sign-in URL | Verified authentication origin |
 |---|---|---|---|
 | Standard cloud | `https://api.folderit.com` | `https://my.folderit.com` | `https://auth.folderit.com` |
 | Apollo | `https://api.apollo.folderit.com` | `https://apollo.folderit.com` | `https://auth.apollo.folderit.com` |
@@ -57,7 +57,7 @@ The connector normalizes supported docs URLs and appends `/v2` once. It keeps th
 
 Saved sessions are bound to the API origin, client credentials and selected account. **Create a new credential for another deployment, account or replacement client key.** Do not edit a working credential to retarget live workflows. Existing **Standard Cloud OAuth2 (Existing Connections)** credentials and trigger checkpoints keep their original behavior. Switching a trigger to a new credential deliberately starts a new subscription: reconcile outstanding events before activation.
 
-API calls, selectors, pagination, polling, previews and binary operations use the credential's deployment. For workflows with a shared receipt ledger, map **Expected Connection Scope** in every action to `connectionScope` from the earlier Connection/Get step. This verifies the action's actual credential before any destination write, including when record IDs overlap across deployments. The candidate customer exports already include that check. Requests use n8n's enforced network filter, checked public DNS addresses and pinned TLS routing. Private hosts, IP literals, nonstandard ports, mixed private/public DNS, redirects and invalid certificates are refused. A private/on-premises deployment needs a separately supported network design; there is no proxy, certificate bypass or private-network toggle here.
+API calls, selectors, pagination, polling, previews and binary operations use the credential's deployment. For workflows with a shared receipt ledger, map **Expected Connection Scope** in every action to `connectionScope` from the earlier Connection/Get step. This verifies the action's actual credential before any destination write, including when record IDs overlap across deployments. The deployment-aware customer exports already include that check. Requests use n8n's enforced network filter, checked public DNS addresses and pinned TLS routing. Private hosts, IP literals, nonstandard ports, mixed private/public DNS, redirects and invalid certificates are refused. A private/on-premises deployment needs a separately supported network design; there is no proxy, certificate bypass or private-network toggle here.
 
 S3 transfers are anonymous. If this deployment returns another storage service, your administrator must supply its **exact public HTTPS origin** in the credential's **Additional Storage Origins**, one per line. Do not paste a signed URL or a wildcard. Storage destinations are validated and resolved independently; Folderit tokens/cookies are not forwarded. External source links and signed storage URLs are not rewritten into browser links or included in sample exports.
 
@@ -73,7 +73,7 @@ For **Folderit Tailor-plan users**, the [current customer workflow guide](CUSTOM
 - New-document notifications and Due-date reminders in Microsoft Teams.
 - Shared failure emails and one-time receipt-table setup.
 
-The 0.5.0 candidate has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
+Version 0.5.0 has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
 
 These use n8n Data Tables and require your own mailbox, Teams and SMTP connections. Read the setup and recovery instructions before activation. An uncertain external result holds processing for inspection; there are no automatic upload/message retries. They are downloadable examples, not listings in n8n's template library.
 
@@ -176,13 +176,15 @@ Local owner setup is complete. Browser testing verified the existing OAuth crede
 
 GitHub repository: https://github.com/folderit-dms/n8n-nodes-folderit
 
-Public npm package: [n8n-nodes-folderit 0.4.0](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.4.0). Self-hosted users can install `n8n-nodes-folderit` through **Settings → Community Nodes**, subject to their instance settings.
+Public npm package: [n8n-nodes-folderit 0.5.0](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.5.0). Self-hosted users can install `n8n-nodes-folderit` through **Settings → Community Nodes**, subject to their instance settings.
 
 Version 0.3.0 was built and staged by the included GitHub Actions workflow using npm trusted publishing and provenance, then approved by the maintainer with 2FA. [Release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38058519315) · [Provenance](https://search.sigstore.dev/?logIndex=3187253309).
 
 Version 0.3.1 did not expose Folderit as an AI tool. Version 0.4.0 adds native AI-tool support for JSON operations while keeping binary upload, add-version and download operations in normal workflow nodes. Both releases passed the official scanner, including provenance verification. [0.4.0 release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38228293407) · [0.3.1 patch release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/38060180424).
 
-n8n confirmed successful verification and publication on n8n Cloud on **27 October 2026**, after automated and manual review. Customers install it by searching **Folderit** in the canvas node panel. [Customer setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/). The npm README included with 0.4.0 predates approval; this repository records the current publication status.
+n8n confirmed successful verification and publication on n8n Cloud on **27 October 2026**, after automated and manual review. Customers install it by searching **Folderit** in the canvas node panel. [Customer setup guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/). The npm README included with 0.4.0 predates approval, and the immutable 0.5.0 archive contains the pre-publication README. This repository records the current publication status.
+
+Version 0.5.0 was published on **28 October 2026**. [0.5.0 release build](https://github.com/folderit-dms/n8n-nodes-folderit/actions/runs/40656380108) · [0.5.0 provenance](https://search.sigstore.dev/?logIndex=3535417578). The verified Cloud listing still offers 0.4.0 while n8n checks and propagates the update.
 
 ## References
 
