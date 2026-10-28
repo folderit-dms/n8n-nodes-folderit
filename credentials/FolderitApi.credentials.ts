@@ -69,11 +69,11 @@ export class FolderitApi implements ICredentialType {
 	restrictToSupportedNodes = true as const;
 	properties: INodeProperties[] = [
 		{
-			displayName: 'Setup',
+			displayName:
+				'Save this credential, then run Folderit → Connection → Get to verify routing and account access. Use a new credential for each deployment/account.',
 			name: 'setupNotice',
 			type: 'notice',
-			default:
-				'Save this credential, then run Folderit → Connection → Get to verify routing and discover the account. It is also verified before every first use. Use a new credential for each deployment/account.',
+			default: '',
 		},
 		{
 			displayName: 'API or Documentation URL',
