@@ -57,7 +57,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const cfg=$('Settings').first().json;\nconst connection=$('Read connection context').first().json;\nif(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');\nconst deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];\n\nfor(const key of ['accountUid','folderUid','ledgerTableId','mailboxScope']) if(typeof cfg[key]!=='string'||!cfg[key].trim()||cfg[key].startsWith('YOUR_')) throw new Error(`Replace ${key} in Settings.`);\nconst allowed=String(cfg.allowedExtensions||'').split(',').map(x=>x.trim().toLowerCase().replace(/^\\./,'')).filter(Boolean);\nif(!allowed.length)throw new Error('Set allowedExtensions, for example pdf,docx,txt.');\nconst out=[]; const mail=$('New email with attachments').all();\nfor(let i=0;i<mail.length;i++){\n const messageId=String(mail[i].json.messageId||mail[i].json.internetMessageId||mail[i].json.id||'').trim();\n const parts=Object.entries(mail[i].binary||{}).filter(([k])=>k.startsWith('attachment_'));\n if(parts.length&&!messageId)throw new Error('Email has no stable Message-ID/provider ID. Inspect it before archiving.');\n for(const [field,b] of parts){\n  const fileName=String(b.fileName||'').split(/[\\\\/]/).pop().replace(/[\\x00-\\x1f\\x7f]/g,'').trim();\n  const ext=fileName.includes('.')?fileName.split('.').pop().toLowerCase():'';\n  if(!fileName||!allowed.includes(ext))continue;\n  out.push({json:{apiOrigin:connection.apiOrigin,accountUid:cfg.accountUid,folderUid:cfg.folderUid,mailboxScope:cfg.mailboxScope,messageId,sourceAttachment:field,fileName},binary:{data:{...b,fileName}},pairedItem:{item:i}});\n }\n}\nreturn out;"
+        "jsCode": "const cfg=$('Settings').first().json;\nfor(const key of ['accountUid','folderUid','ledgerTableId','mailboxScope']) if(typeof cfg[key]!=='string'||!cfg[key].trim()||cfg[key].startsWith('YOUR_')) throw new Error(`Replace ${key} in Settings.`);\nconst allowed=String(cfg.allowedExtensions||'').split(',').map(x=>x.trim().toLowerCase().replace(/^\\./,'')).filter(Boolean);\nif(!allowed.length)throw new Error('Set allowedExtensions, for example pdf,docx,txt.');\nconst out=[]; const mail=$('New email with attachments').all();\nfor(let i=0;i<mail.length;i++){\n const messageId=String(mail[i].json.messageId||mail[i].json.internetMessageId||mail[i].json.id||'').trim();\n const parts=Object.entries(mail[i].binary||{}).filter(([k])=>k.startsWith('attachment_'));\n if(parts.length&&!messageId)throw new Error('Email has no stable Message-ID/provider ID. Inspect it before archiving.');\n for(const [field,b] of parts){\n  const fileName=String(b.fileName||'').split(/[\\\\/]/).pop().replace(/[\\x00-\\x1f\\x7f]/g,'').trim();\n  const ext=fileName.includes('.')?fileName.split('.').pop().toLowerCase():'';\n  if(!fileName||!allowed.includes(ext))continue;\n  out.push({json:{accountUid:cfg.accountUid,folderUid:cfg.folderUid,mailboxScope:cfg.mailboxScope,messageId,sourceAttachment:field,fileName},binary:{data:{...b,fileName}},pairedItem:{item:i}});\n }\n}\nreturn out;"
       }
     },
     {
@@ -89,7 +89,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const attachments=$('Split and validate attachments').all();\nreturn $input.all().map((x,i)=>{\n if(!/^[a-f0-9]{64}$/.test(x.json.payloadHash||''))throw new Error('Missing attachment SHA-256.');\n if(x.json.payloadHash==='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')throw new Error('Empty attachments cannot be archived.');\n const binary=attachments[i]?.binary;\n if(!binary?.data)throw new Error('The source attachment binary is unavailable; no upload was attempted.');\n const j=x.json;\n if(typeof j.apiOrigin!=='string'||!/^https:\\/\\/api\\.[a-z0-9.-]+$/.test(j.apiOrigin))throw new Error('Verified deployment context is missing; no upload was attempted.');\n return {json:{...j,receiptKey:JSON.stringify(['archive-v1',...(j.apiOrigin==='https://api.folderit.com'?[]:[j.apiOrigin]),j.accountUid,j.folderUid,j.mailboxScope,j.messageId,j.sourceAttachment,j.fileName,j.payloadHash]),sourceRef:JSON.stringify([j.mailboxScope,j.messageId,j.sourceAttachment])},binary,pairedItem:{item:i}};\n});"
+        "jsCode": "const attachments=$('Split and validate attachments').all();\nreturn $input.all().map((x,i)=>{\n if(!/^[a-f0-9]{64}$/.test(x.json.payloadHash||''))throw new Error('Missing attachment SHA-256.');\n if(x.json.payloadHash==='e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855')throw new Error('Empty attachments cannot be archived.');\n const binary=attachments[i]?.binary;\n if(!binary?.data)throw new Error('The source attachment binary is unavailable; no upload was attempted.');\n const j=x.json;\n return {json:{...j,receiptKey:JSON.stringify(['archive-v1',j.accountUid,j.folderUid,j.mailboxScope,j.messageId,j.sourceAttachment,j.fileName,j.payloadHash]),sourceRef:JSON.stringify([j.mailboxScope,j.messageId,j.sourceAttachment])},binary,pairedItem:{item:i}};\n});"
       }
     },
     {
@@ -488,9 +488,7 @@
         "operation": "upload",
         "accountUid": "={{ $json.accountUid }}",
         "folderUid": "={{ $json.folderUid }}",
-        "binaryPropertyName": "data",
-        "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "binaryPropertyName": "data"
       }
     },
     {
@@ -506,9 +504,7 @@
         "resource": "file",
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
-        "fileUid": "={{ $json.uid }}",
-        "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "fileUid": "={{ $json.uid }}"
       }
     },
     {
@@ -525,9 +521,7 @@
         "operation": "download",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $json.uid }}",
-        "outputBinaryField": "verifiedFile",
-        "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "outputBinaryField": "verifiedFile"
       }
     },
     {
@@ -897,7 +891,7 @@
         -170
       ],
       "parameters": {
-        "content": "# Archive attachments with saved receipts\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nConnect **Microsoft Outlook OAuth2** in the trigger. This uses delegated mailbox access. Use an intake mailbox/folder and test with one synthetic email. The template leaves read/unread status unchanged. The provider mailbox ID is a fallback when the RFC Message-ID is missing; moving mail may change provider IDs.\n\nSet all Settings placeholders, then select the same Folderit Connection credential in Read connection context, Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.",
+        "content": "# Archive attachments with saved receipts\nFor **Folderit Tailor-plan users** with API credentials. Requires an n8n release with Data Table node v1.1; tested runtime: n8n 2.42.5. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nConnect **Microsoft Outlook OAuth2** in the trigger. This uses delegated mailbox access. Use an intake mailbox/folder and test with one synthetic email. The template leaves read/unread status unchanged. The provider mailbox ID is a fallback when the RFC Message-ID is missing; moving mail may change provider IDs.\n\nSet all Settings placeholders, then select the same Folderit credential in Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.",
         "width": 1100,
         "height": 650
       }
@@ -912,25 +906,9 @@
         -170
       ],
       "parameters": {
-        "content": "# Recovery and limits\nThe table contains a single processing lock plus durable receipts. Only a run owning the lock may perform an upload or send a message. A completed receipt suppresses repeats for its key. The lock has NO automatic expiry: a crash, failed readback or uncertain API response keeps work blocked for inspection.\n\nCompeting runs wait and retry lock acquisition for about one minute; uploads/messages are never automatically retried. If a run still reports a busy lock, retry that FAILED execution after the owner finishes. Do not discard its input. On other failures, inspect saved executions, receipt state and the actual destination. Never clear the lock while its owner may still be running. Reconcile pending rows before clearing it. See CUSTOMER-WORKFLOWS.md for recovery steps.\n\nThis is duplicate protection with explicit recovery, not an exactly-once guarantee across n8n and an external service. Keep failed execution/binary data long enough for recovery and monitor the failure-alert workflow itself. Production provider delivery and fresh Cloud behavior require validation in your environment.\n\nOne receipt key includes deployment, account, destination, mailbox, message ID, attachment field, filename and SHA-256. A new email can intentionally archive identical content. Every new upload is downloaded again and its bytes hashed before completion is recorded; this adds download traffic and avoids depending on asynchronously populated server hash metadata. Empty files and files over 100 MiB fail. Extension checks do not replace malware scanning. No automatic upload retries.",
+        "content": "# Recovery and limits\nThe table contains a single processing lock plus durable receipts. Only a run owning the lock may perform an upload or send a message. A completed receipt suppresses repeats for its key. The lock has NO automatic expiry: a crash, failed readback or uncertain API response keeps work blocked for inspection.\n\nCompeting runs wait and retry lock acquisition for about one minute; uploads/messages are never automatically retried. If a run still reports a busy lock, retry that FAILED execution after the owner finishes. Do not discard its input. On other failures, inspect saved executions, receipt state and the actual destination. Never clear the lock while its owner may still be running. Reconcile pending rows before clearing it. See CUSTOMER-WORKFLOWS.md for recovery steps.\n\nThis is duplicate protection with explicit recovery, not an exactly-once guarantee across n8n and an external service. Keep failed execution/binary data long enough for recovery and monitor the failure-alert workflow itself. Production provider delivery and fresh Cloud behavior require validation in your environment.\n\nOne receipt key includes account, destination, mailbox, message ID, attachment field, filename and SHA-256. A new email can intentionally archive identical content. Every new upload is downloaded again and its bytes hashed before completion is recorded; this adds download traffic and avoids depending on asynchronously populated server hash metadata. Empty files and files over 100 MiB fail. Extension checks do not replace malware scanning. No automatic upload retries.",
         "width": 1050,
         "height": 650
-      }
-    },
-    {
-      "id": "ac9795e7-54bf-56de-b4d3-5f7e5ef0393f",
-      "name": "Read connection context",
-      "type": "n8n-nodes-folderit.folderit",
-      "typeVersion": 1,
-      "position": [
-        360,
-        640
-      ],
-      "parameters": {
-        "authentication": "folderitApi",
-        "resource": "connection",
-        "operation": "get",
-        "accountUid": "={{ $('Settings').first().json.accountUid }}"
       }
     }
   ],
@@ -950,7 +928,7 @@
       "main": [
         [
           {
-            "node": "Read connection context",
+            "node": "Split and validate attachments",
             "type": "main",
             "index": 0
           }
@@ -1252,17 +1230,6 @@
         [
           {
             "node": "Process one item",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read connection context": {
-      "main": [
-        [
-          {
-            "node": "Split and validate attachments",
             "type": "main",
             "index": 0
           }

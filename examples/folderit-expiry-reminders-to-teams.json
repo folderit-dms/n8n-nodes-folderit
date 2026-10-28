@@ -52,9 +52,7 @@
         "operation": "getAll",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "folderUid": "={{ $('Settings').first().json.folderUid }}",
-        "returnAll": true,
-        "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "returnAll": true
       }
     },
     {
@@ -70,9 +68,7 @@
         "resource": "file",
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
-        "fileUid": "={{ $json.uid }}",
-        "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "fileUid": "={{ $json.uid }}"
       }
     },
     {
@@ -86,7 +82,7 @@
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const cfg=$('Settings').first().json;\nconst connection=$('Read connection context').first().json;\nif(connection.accountUid!==cfg.accountUid||!connection.apiOrigin)throw new Error('Connection deployment/account does not match Settings.');\nconst deploymentKey=connection.apiOrigin==='https://api.folderit.com'?[]:[connection.apiOrigin];\n\nfor(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);\nconst tokens=String(cfg.reminderDays??'').split(',').map(x=>x.trim());\nif(tokens.some(x=>!/^\\d+$/.test(x)))throw new Error('reminderDays needs a non-empty comma-separated list of whole days.');\nconst milestones=tokens.map(Number);\nif(!milestones.length||milestones.some(x=>!Number.isInteger(x)||x<0||x>365)||new Set(milestones).size!==milestones.length)throw new Error('reminderDays needs unique whole days from 0 to 365.');\nmilestones.sort((a,b)=>b-a);\nconst overdue=Number(cfg.overdueDays);if(!Number.isInteger(overdue)||overdue<0||overdue>365)throw new Error('overdueDays must be 0–365.');\nconst now=new Date();const today=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());const out=[];\nfor(const [i,item]of $input.all().entries()){\n const f=item.json;if(f.dueDate===null||f.dueDate===undefined||f.dueDate==='')continue;\n if(typeof f.dueDate!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(f.dueDate))throw new Error('A dueDate is not YYYY-MM-DD. Correct the record before continuing.');\n const d=new Date(f.dueDate+'T00:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==f.dueDate)throw new Error('A dueDate is not a valid calendar date.');\n const days=Math.round((d.getTime()-today)/86400000);if(days>milestones[0]||days < -overdue)continue;\n const milestone=days<=0 ? (milestones.includes(0)?0:null) : milestones.filter(x=>x>=days).at(-1);\n if(milestone===null||milestone===undefined)continue;\n if(!f.uid||f.type!=='file')throw new Error('Expected a Folderit file with UID.');\n const name=String(f.name||'').replace(/[\\r\\n]/g,' ');\n out.push({json:{receiptKey:JSON.stringify(['teams-expiry-v1',...deploymentKey,cfg.accountUid,f.uid,f.dueDate,milestone,cfg.teamId,cfg.channelId]),sourceRef:JSON.stringify([f.uid,f.dueDate,milestone]),notificationText:`Folderit expiry reminder: ${name}\\nDue date: ${f.dueDate}\\nDays remaining: ${days}\\nDocument UID: ${f.uid}\\nReminder milestone: ${milestone} days`},pairedItem:{item:i}});\n}return out;"
+        "jsCode": "const cfg=$('Settings').first().json;\nfor(const key of ['ledgerTableId','teamId','channelId'])if(!cfg[key]||cfg[key].startsWith('YOUR_'))throw new Error(`Replace ${key} in Settings.`);\nconst tokens=String(cfg.reminderDays??'').split(',').map(x=>x.trim());\nif(tokens.some(x=>!/^\\d+$/.test(x)))throw new Error('reminderDays needs a non-empty comma-separated list of whole days.');\nconst milestones=tokens.map(Number);\nif(!milestones.length||milestones.some(x=>!Number.isInteger(x)||x<0||x>365)||new Set(milestones).size!==milestones.length)throw new Error('reminderDays needs unique whole days from 0 to 365.');\nmilestones.sort((a,b)=>b-a);\nconst overdue=Number(cfg.overdueDays);if(!Number.isInteger(overdue)||overdue<0||overdue>365)throw new Error('overdueDays must be 0–365.');\nconst now=new Date();const today=Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate());const out=[];\nfor(const [i,item]of $input.all().entries()){\n const f=item.json;if(f.dueDate===null||f.dueDate===undefined||f.dueDate==='')continue;\n if(typeof f.dueDate!=='string'||!/^\\d{4}-\\d{2}-\\d{2}$/.test(f.dueDate))throw new Error('A dueDate is not YYYY-MM-DD. Correct the record before continuing.');\n const d=new Date(f.dueDate+'T00:00:00Z');if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==f.dueDate)throw new Error('A dueDate is not a valid calendar date.');\n const days=Math.round((d.getTime()-today)/86400000);if(days>milestones[0]||days < -overdue)continue;\n const milestone=days<=0 ? (milestones.includes(0)?0:null) : milestones.filter(x=>x>=days).at(-1);\n if(milestone===null||milestone===undefined)continue;\n if(!f.uid||f.type!=='file')throw new Error('Expected a Folderit file with UID.');\n const name=String(f.name||'').replace(/[\\r\\n]/g,' ');\n out.push({json:{receiptKey:JSON.stringify(['teams-expiry-v1',cfg.accountUid,f.uid,f.dueDate,milestone,cfg.teamId,cfg.channelId]),sourceRef:JSON.stringify([f.uid,f.dueDate,milestone]),notificationText:`Folderit expiry reminder: ${name}\\nDue date: ${f.dueDate}\\nDays remaining: ${days}\\nDocument UID: ${f.uid}\\nReminder milestone: ${milestone} days`},pairedItem:{item:i}});\n}return out;"
       }
     },
     {
@@ -850,7 +846,7 @@
         -170
       ],
       "parameters": {
-        "content": "# Contract and certificate expiry reminders\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nUse a dedicated folder containing the documents to track. Set each document’s standard Folderit **Due date** to its actual expiry/renewal date. This template reads that field, not arbitrary custom metadata or dates inside document text. It does not decide legal expiry dates.\n\nSet Settings UIDs, team/channel and reminderDays. Connect the same Folderit Connection credential in Read connection context and both read nodes and delegated Microsoft Teams OAuth2 in the send node. No Folderit records are changed. Schedule defaults to 09:00 UTC; date calculations use UTC calendar days.",
+        "content": "# Contract and certificate expiry reminders\nFor **Folderit Tailor-plan users** with API credentials. Requires an n8n release with Data Table node v1.1; tested runtime: n8n 2.42.5. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nUse a dedicated folder containing the documents to track. Set each document’s standard Folderit **Due date** to its actual expiry/renewal date. This template reads that field, not arbitrary custom metadata or dates inside document text. It does not decide legal expiry dates.\n\nSet Settings UIDs, team/channel and reminderDays. Connect Folderit in both read nodes and delegated Microsoft Teams OAuth2 in the send node. No Folderit records are changed. Schedule defaults to 09:00 UTC; date calculations use UTC calendar days.",
         "width": 1100,
         "height": 650
       }
@@ -868,22 +864,6 @@
         "content": "# Reminder behavior and recovery\nThe table contains a single processing lock plus durable receipts. Only a run owning the lock may perform an upload or send a message. A completed receipt suppresses repeats for its key. The lock has NO automatic expiry: a crash, failed readback or uncertain API response keeps work blocked for inspection.\n\nCompeting runs wait and retry lock acquisition for about one minute; uploads/messages are never automatically retried. If a run still reports a busy lock, retry that FAILED execution after the owner finishes. Do not discard its input. On other failures, inspect saved executions, receipt state and the actual destination. Never clear the lock while its owner may still be running. Reconcile pending rows before clearing it. See CUSTOMER-WORKFLOWS.md for recovery steps.\n\nThis is duplicate protection with explicit recovery, not an exactly-once guarantee across n8n and an external service. Keep failed execution/binary data long enough for recovery and monitor the failure-alert workflow itself. Production provider delivery and fresh Cloud behavior require validation in your environment.\n\nDefault milestones are 30, 7, 1 and 0 days. The first run within a window sends that window’s reminder (for example, 20 days left sends the 30-day reminder). It does not send every missed milestone. The 0-day reminder can be sent once through 7 days overdue; adjust overdueDays. No due date means no reminder. Invalid dates fail visibly. One receipt is stored per account/document/due date/milestone/destination. A changed due date starts a new reminder cycle. This folder is not traversed recursively.",
         "width": 1050,
         "height": 650
-      }
-    },
-    {
-      "id": "9cfaf557-5ac5-511d-b9f4-13e7e02861a8",
-      "name": "Read connection context",
-      "type": "n8n-nodes-folderit.folderit",
-      "typeVersion": 1,
-      "position": [
-        360,
-        640
-      ],
-      "parameters": {
-        "authentication": "folderitApi",
-        "resource": "connection",
-        "operation": "get",
-        "accountUid": "={{ $('Settings').first().json.accountUid }}"
       }
     }
   ],
@@ -903,7 +883,7 @@
       "main": [
         [
           {
-            "node": "Read connection context",
+            "node": "List tracked documents",
             "type": "main",
             "index": 0
           }
@@ -1172,17 +1152,6 @@
         [
           {
             "node": "Process one item",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Read connection context": {
-      "main": [
-        [
-          {
-            "node": "List tracked documents",
             "type": "main",
             "index": 0
           }
