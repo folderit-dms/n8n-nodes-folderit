@@ -5,7 +5,8 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'examples'
+OUT = ROOT / 'examples' / 'deployments'
+OUT.mkdir(parents=True, exist_ok=True)
 KB = 'https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/'
 SCHEMA = ['key', 'state', 'owner', 'payloadHash', 'targetUid', 'sourceRef']
 CURRENT = ''
@@ -68,7 +69,9 @@ def save(filename, name, nodes, con, **settings):
     (OUT / filename).write_text(json.dumps(obj, ensure_ascii=False, indent=2) + '\n')
 
 
-COMMON = f'''For **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit]({KB})
+COMMON = f'''For **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit]({KB})
+
+To create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.
 
 Run **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.
 
