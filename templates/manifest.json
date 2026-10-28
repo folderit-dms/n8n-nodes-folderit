@@ -8,7 +8,7 @@
       "n8n Data Table v1.1",
       "provider credentials"
     ],
-    "acceptance": "provider checks pending; not submitted to n8n library"
+    "acceptance": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; remaining failure checks pending; not submitted to n8n library"
   },
   {
     "file": "notify-teams-on-new-documents.json",

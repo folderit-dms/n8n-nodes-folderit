@@ -173,7 +173,8 @@ const allowed=String(cfg.allowedExtensions||'').split(',').map(x=>x.trim().toLow
 if(!allowed.length)throw new Error('Set allowedExtensions, for example pdf,docx,txt.');
 const out=[]; const mail=$('New email with attachments').all();
 for(let i=0;i<mail.length;i++){
- const messageId=String(mail[i].json.messageId||mail[i].json.internetMessageId||mail[i].json.id||'').trim();
+ const source=mail[i].json;
+ const messageId=[source.messageId,source.internetMessageId,source.metadata?.['message-id'],source.id].find(value=>typeof value==='string'&&value.trim())?.trim()||'';
  const parts=Object.entries(mail[i].binary||{}).filter(([k])=>k.startsWith('attachment_'));
  if(parts.length&&!messageId)throw new Error('Email has no stable Message-ID/provider ID. Inspect it before archiving.');
  for(const [field,b] of parts){

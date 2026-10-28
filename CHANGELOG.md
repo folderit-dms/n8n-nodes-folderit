@@ -1,5 +1,11 @@
 # Changelog
 
+## Workflow template correction — 2026-10-28
+
+- Read the RFC Message-ID from native n8n IMAP `metadata["message-id"]`, including when a message is moved and receives a different mailbox UID. Reject missing or malformed identifiers before processing.
+- Verify real IMAP intake in n8n Cloud with two synthetic attachments, downloaded-byte checks, an excluded extension and a repeated message that creates no extra files or receipts.
+- Update the current workflow source and separate starter pack. Previously published npm versions and historical customer ZIPs are unchanged.
+
 ## 0.5.0 — published, 2026-10-28
 
 - Add deployment-aware Folderit Connection credentials alongside unchanged standard-cloud OAuth2 credentials.

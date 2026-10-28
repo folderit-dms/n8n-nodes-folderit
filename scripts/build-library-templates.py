@@ -131,7 +131,9 @@ def build(case):
     target.write_text(json.dumps(obj, ensure_ascii=False, indent=2) + "\n")
     return dict(file=target.name, name=case["title"], nodes=len(obj["nodes"]),
                 requirements=["Folderit Tailor plan and API access", "n8n Data Table v1.1", "provider credentials"],
-                acceptance="provider checks pending; not submitted to n8n library")
+                acceptance=("Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; remaining failure checks pending; not submitted to n8n library"
+                            if case["slug"] == "archive-imap-attachments"
+                            else "provider checks pending; not submitted to n8n library"))
 
 
 if __name__ == "__main__":

@@ -5,21 +5,30 @@ Embedded manual receipt-table creation and reuse passed for every candidate:
 six successful editor executions, three tables, one preserved free lock each.
 The setup branch cannot reach a mailbox, Teams or Folderit node.
 
-Core service-processing parameters and wiring are unchanged from the earlier
-standard-cloud examples. Earlier native tests covered actual synthetic Folderit
+Core service-processing wiring follows the earlier standard-cloud examples.
+The current IMAP mapping additionally reads native metadata["message-id"].
+Earlier native tests covered actual synthetic Folderit
 uploads, downloaded-byte verification, repeats, overlapping runs, interrupted
 results across restart and manual recovery. Teams was stubbed in those tests.
 
-Real IMAP intake, Teams channel delivery and external SMTP are pending dedicated
-test connections. These candidates are not submitted/approved library listings.
-Do not label those provider checks passed. All exports are inactive, credential
+Real IMAP intake passed in n8n Cloud on 28 October 2026. The native simple-format
+message supplies metadata["message-id"]. Two allowed synthetic attachments were
+uploaded and independently downloaded with matching SHA-256 hashes. A disallowed
+extension was absent. Replaying the same message left exactly two files and two
+completed receipts, with the processing lock free. No mailbox credential or
+private destination identifier is included in these exports.
+
+Teams channel delivery, external SMTP and remaining provider failure cases are
+pending. These candidates are not submitted/approved library listings.
+Do not label those pending checks passed. All exports are inactive, credential
 free and have no pinned output. Native PNG previews accompany each workflow.
 Final image links are documentation-only additions to the tested graph.
 
 The tested n8n execute CLI lacks Data Table helpers; successful setup acceptance
 used the actual n8n editor. Current verified Cloud package is 0.4.0. Published
 0.5.0 is under n8n update review. These candidates use standard-cloud OAuth2.
-Existing customer and deployment-aware bundles remain unchanged.
+Previously published npm packages and historical customer ZIPs remain unchanged.
+Current attachment-workflow source JSONs and this starter pack include the fix.
 
 Before submission: test the final imported JSON with dedicated service accounts;
 inspect actual destination results; exercise repeat, empty/missing and failure

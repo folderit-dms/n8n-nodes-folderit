@@ -22,11 +22,13 @@ A created folder/file belongs in Folderit. An n8n Data Table belongs inside that
 
 These files are **candidates for n8n's template library**, not approved library listings. The underlying processing already passed native Folderit upload/read/download, duplicate/overlap, interrupted-result and recovery tests. Microsoft delivery used a local provider stub in those earlier tests. Current exact-file import and setup results are tracked with the release evidence.
 
-Real IMAP intake, real Teams channel delivery and external SMTP acceptance are still pending dedicated test connections. Do not label these provider checks passed or submit these candidates until the complete workflow has been tested against the actual destination. n8n's submission also requires the account owner to agree to the template terms.
+Real IMAP intake passed in n8n Cloud on 28 October 2026: two permitted synthetic attachments were saved, independently downloaded and matched by SHA-256; the disallowed extension was absent. A repeat left exactly the same two files and two completed receipts, with the processing lock released. The live test found and corrected native IMAP Message-ID mapping. Use this current starter pack for that correction.
+
+Real Teams channel delivery, external SMTP and remaining provider failure cases are still pending. These checks and the account owner's agreement to n8n's template terms remain required before library submission. Test every workflow in your own account before activation.
 
 Read the [processing and manual-recovery guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/CUSTOMER-WORKFLOWS.md#recovery-inspect-before-retrying). A pending result can mean the external action happened. Keep pending receipts and the lock held until its outcome is established. There is no exactly-once guarantee across services.
 
-The existing six-export customer bundle and separate deployment-aware 0.5.0 bundle remain unchanged. For dedicated/custom-domain connections, use the [deployment guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/examples/deployments/CUSTOMER-WORKFLOWS.md); these three library candidates deliberately retain the standard-cloud credential setup.
+Historical customer ZIPs and npm packages remain unchanged. Current attachment-workflow source JSONs include the IMAP correction. For dedicated/custom-domain connections, use the current JSONs in the [deployment guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/examples/deployments/CUSTOMER-WORKFLOWS.md); these three library candidates retain the standard-cloud credential setup.
 
 ## Workflow images
 
