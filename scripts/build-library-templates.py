@@ -41,7 +41,7 @@ def transform(value, mapping):
     return value
 
 
-def sticky(slug, name, text, x, y, width, height, color=5):
+def sticky(slug, name, text, x, y, width, height, color=7):
     return dict(id=str(uuid.uuid5(uuid.NAMESPACE_URL, "folderit-library/" + slug + "/" + name)),
                 name=name, type="n8n-nodes-base.stickyNote", typeVersion=1,
                 position=[x, y], parameters=dict(content=text, width=width, height=height, color=color))
@@ -75,6 +75,76 @@ CASES = [
 ]
 
 
+def annotate(obj, case):
+    """Apply n8n's overview/section-note format without changing execution."""
+    slug = case["slug"]
+    imap = slug == "archive-imap-attachments"
+    recovery = "https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/CUSTOMER-WORKFLOWS.md#recovery-inspect-before-retrying"
+    custom = {
+        "archive-imap-attachments": "Change allowedExtensions for your intake. A stable Message-ID is required; empty files and files over 100 MiB fail. Extension filtering is not malware scanning.",
+        "notify-teams-on-new-documents": "Set folderUid for one exact parent, excluding descendants; blank accepts account events. Poll at least hourly. Interruptions beyond 23 hours need reconciliation.",
+        "remind-teams-about-due-dates": "Change reminderDays and overdueDays. This reads standard Due dates, not document text or custom metadata. Dates and the 09:00 schedule use UTC; folder scans are not recursive.",
+    }[slug]
+    first_test = {
+        "archive-imap-attachments": "Start with an empty test inbox: existing unseen mail can be fetched. Activate before sending two allowed test attachments and one excluded file. Check downloaded bytes and replay suppression.",
+        "notify-teams-on-new-documents": "Activate, allow the first poll, then upload a test file. Inspect the actual channel notice and repeat suppression. Manual previews can include historical events and send notices.",
+        "remind-teams-about-due-dates": "Keep the schedule off while testing future, due-today, overdue and missing-date documents. Inspect actual channel messages and repeat suppression before activation.",
+    }[slug]
+    intro = ("### How it works\n" + case["audience"] + " " + case["outcome"] +
+             " Completed receipts suppress repeats. An uncertain destination result stops processing and holds the lock for manual recovery.\n\n"
+             "### Setup\nRequires Folderit **Tailor with API access**, a dedicated test destination and provider credentials. Install Folderit using the connection guide below. Tested on n8n **2.46.0** with **n8n-nodes-folderit 0.4.0**; Data Table v1.1 is required.\n\n"
+             "1. Keep inactive. Choose a stable table name in **Ledger setup settings** and run only **1. Set up receipt table**, once at a time in the same n8n project.\n"
+             "2. " + case["setup"] + " Never put secrets in Settings. Copies processing the same input must share the table.\n"
+             "3. " + first_test + "\n\n"
+             "### Customization\n" + custom + "\n\n"
+             "[Connection and first-run guide](" + KB + ") · [Recovery instructions](" + recovery + ")\n\n"
+             "[Workflow image](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/templates/assets/" + slug + ".png)")
+    # Keep a single left-to-right service path. Notes sit behind the nodes they
+    # explain; the isolated setup branch stays the first execution root.
+    positions = {
+        "Settings": (200, 400), "Split and validate attachments": (400, 400),
+        "Hash attachment bytes": (600, 400), "Build attachment receipt keys": (800, 400),
+        "Read new document details": (400, 400), "Prepare arrival notifications": (600, 400),
+        "List tracked documents": (400, 400), "Read document expiry dates": (600, 400),
+        "Select due reminders": (800, 400), "Process one item": (1100, 760),
+        "Read processing lock": (1100, 400), "Check lock record": (1300, 400),
+        "Acquire processing lock": (1500, 400), "Confirm lock ownership": (1700, 400),
+        "Lock acquired?": (1700, 120), "Limit lock waiting": (1900, 120),
+        "Wait before checking lock": (2100, 120), "Find processing receipt": (2400, 400),
+        "Decide whether to process": (2600, 400), "Already completed?": (2800, 400),
+        "Report previous completion": (3000, 160), "Record pending attempt": (3300, 540),
+        "Restore work item": (3500, 540), "Upload attachment": (3700, 540),
+        "Read uploaded document": (3900, 540), "Download stored attachment": (4200, 760),
+        "Hash stored attachment bytes": (4400, 760), "Verify destination result": (4600, 540),
+        "Send Teams notification": (3700, 540), "Save completed receipt": (4900, 540),
+        "Confirm completed receipt": (5100, 540), "Release processing lock": (5300, 400),
+        "Confirm lock released": (5500, 400),
+    }
+    for node in obj["nodes"]:
+        if node["name"] in positions:
+            node["position"] = list(positions[node["name"]])
+        elif node["name"].startswith("Setup:") or node["name"] in (
+                "1. Set up receipt table", "Ledger setup settings", "Copy ledgerTableId into Settings"):
+            node["position"][1] -= 600
+    intake = {
+        "archive-imap-attachments": "## 2 · Select safe attachments\nConfigure the IMAP and Settings nodes first. Split permitted attachments and hash their bytes; read/unread status is unchanged. Message-ID and attachment identity distinguish repeats from a different email with identical content.",
+        "notify-teams-on-new-documents": "## 2 · Read new document events\nUse the same account UID and Folderit credential in the trigger and Settings. Read accessible document details and apply the optional exact-folder filter. A missing document stops for inspection.",
+        "remind-teams-about-due-dates": "## 2 · Select the current reminder\nRead standard Due dates and choose one current milestone, not every missed milestone. Missing dates are skipped; malformed dates fail. A changed date starts a new reminder cycle; default overdue notices stop after seven days.",
+    }[slug]
+    sections = [
+        ("Intake and selection", intake, -80, 200, 1080, 800),
+        ("Serialize processing", "## 3 · Process one item at a time\nA shared lock serializes overlapping runs. Confirm ownership before continuing; competing runs wait for about one minute, then stop. There is no automatic lock expiry: a failed run needs inspection.", 1000, -80, 1280, 1080),
+        ("Check saved receipts", "## 4 · Skip confirmed work\nLook up the item’s durable receipt. Completed work follows the upper bypass; a new item continues to the destination action. Pending or inconsistent receipts stop for recovery instead of repeating an uncertain action.", 2300, -80, 880, 1080),
+        ("Record before writing", "## 5 · Record before uploading\nSave a pending receipt before creating the Folderit file. If the request fails or times out, inspect the actual destination before retrying; the file may already exist." if imap else "## 5 · Record before notifying\nSave a pending receipt before posting to Teams. Use a delegated work account that can post in the configured channel. A failed or uncertain response holds the lock; inspect the channel before retrying.", 3200, 200, 900, 800),
+        ("Verify the destination", "## 6 · Verify the stored bytes\nRead the new document, download its stored binary and compare SHA-256 with the original attachment. Only an exact match may become a completed receipt. A successful upload status alone is insufficient." if imap else "## 6 · Check the returned message\nRequire a message ID from Teams before completing the receipt. During acceptance testing, also open the actual channel and check its body and destination; a green execution alone is insufficient.", 4100, 200, 700, 800),
+        ("Complete and release", "## 7 · Save the result, then unlock\nConfirm the completed receipt before freeing the lock and taking the next item. Retain completed receipts. After a failure, confirm the old owner has stopped and reconcile every pending result before releasing its lock.", 4800, 200, 900, 800),
+        ("Manual receipt-table setup", "## 1 · Run setup before the service trigger\nChoose a stable table name, then run this manual branch once. It validates or creates local receipts and the lock without contacting providers. Copy the final ledgerTableId into the main Settings node; preserve this table on upgrades.", -80, 1080, 2160, 650),
+    ]
+    obj["nodes"] += [sticky(slug, "Overview and requirements", intro, -1000, -100, 860, 900, 1)]
+    obj["nodes"] += [sticky(slug, name, text, x, y, width, height)
+                     for name, text, x, y, width, height in sections]
+
+
 def build(case):
     obj = json.loads((ROOT / "examples" / case["source"]).read_text())
     obj["name"] = case["title"]
@@ -104,21 +174,7 @@ def build(case):
                     edge["node"] = mapping[edge["node"]]
         obj["connections"][mapping[source]] = channels
 
-    intro = ("# " + case["title"] + "\n\n" + case["audience"] + "\n\n" + case["outcome"] +
-             "\n\n**Folderit Tailor plan with API access is required.** Install `n8n-nodes-folderit` and use the standard-cloud OAuth2 credential. Requires Data Table node v1.1. Core processing was tested on n8n 2.42.5; test your real mailbox/channel before activation. The default export is inactive and contains no credentials or pinned results.\n\n[Folderit installation and connection guide](" + KB + ")")
-    intro += "\n\n![Workflow overview](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/templates/assets/" + case["slug"] + ".png)"
-    setup_text = ("# Configure before activation\n\n1. Keep this workflow inactive. Create credentials in n8n's credential store.\n2. Run the separate **1. Set up receipt table** manual branch once, without running the service trigger. Run setup one at a time in the SAME n8n project.\n3. Open **Copy ledgerTableId into Settings** and copy its `ledgerTableId`.\n4. " + case["setup"] +
-                  "\n5. All copies processing the same source/destination must share the same table. Setup reuses an existing table of that name and preserves receipts. Keep its name stable.\n6. Complete the acceptance checks, then activate the service trigger. Never put passwords, API secrets or tokens in Settings.")
-    alert_text = ("# Failure visibility and optional alerts\n\nA failed action stops the run and can leave its receipt/lock pending. Inspect **Executions**, the receipt table and the actual destination before retrying. Keep failed-execution saving on.\n\nFor an email alert, import the [shared SMTP error workflow](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/examples/folderit-failure-alert-email.json), configure its sender/recipient and SMTP credential, save it, then choose it in this workflow's **⋯ → Settings → Error workflow**. SMTP alerts are optional; core processing does not depend on that separate workflow.\n\nProve alert delivery with a controlled failure in an activated test workflow. Manual errors do not automatically invoke Error Trigger. An alert workflow can itself fail; monitor the provider separately.")
-    obj["nodes"] += [
-        sticky(case["slug"], "Overview and requirements", intro, 0, -1160, 1040, 980),
-        sticky(case["slug"], "Configure before activation", setup_text, 1120, -760, 1160, 650, 4),
-        sticky(case["slug"], "Provider behavior", case["behavior"], 2360, -760, 1160, 620),
-        sticky(case["slug"], "Recovery and duplicate handling", RECOVERY, 3600, -760, 1320, 750, 3),
-        sticky(case["slug"], "Manual receipt-table setup", "# Run this branch once\n\nThis branch creates or reuses the receipt table and validates its lock. It does not connect to Folderit or Microsoft and does not send mail.\n\nOpen **Ledger setup settings** and choose a stable table name, then execute **1. Set up receipt table**. Copy the final table ID into the main **Settings** node above. Do not run setup concurrently. Preserve this table when upgrading or duplicating the main workflow.", 0, 970, 1500, 420, 4),
-        sticky(case["slug"], "Acceptance checks", "# Test your actual connections\n\n" + case["test"], 1650, 970, 1450, 420),
-        sticky(case["slug"], "Failures and email alerts", alert_text, 3220, 970, 1700, 540, 3),
-    ]
+    annotate(obj, case)
     obj["active"] = False
     obj["pinData"] = {}
     for key in ["id", "versionId", "activeVersionId", "createdAt", "updatedAt", "tags", "meta"]:
@@ -132,9 +188,9 @@ def build(case):
     return dict(file=target.name, name=case["title"], nodes=len(obj["nodes"]),
                 requirements=["Folderit Tailor plan and API access", "n8n Data Table v1.1", "provider credentials"],
                 acceptance={
-                    "archive-imap-attachments": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; not submitted to n8n library",
-                    "notify-teams-on-new-documents": "Real scheduled Teams arrival, exact-folder exclusion and duplicate replay passed in n8n Cloud; not submitted to n8n library",
-                    "remind-teams-about-due-dates": "Real Teams reminders, skipped dates, duplicate replay, changed-date overlap and controlled failure quarantine passed in n8n Cloud; not submitted to n8n library",
+                    "archive-imap-attachments": "Real IMAP intake, exact bytes and duplicate replay passed in n8n Cloud; annotation-only revision preserves that processing logic; library review is separate",
+                    "notify-teams-on-new-documents": "Real scheduled Teams arrival, exact-folder exclusion and duplicate replay passed in n8n Cloud; annotation-only revision preserves that processing logic; library review is separate",
+                    "remind-teams-about-due-dates": "Real Teams reminders, skipped dates, duplicate replay, changed-date overlap and controlled failure quarantine passed in n8n Cloud; annotation-only revision preserves that processing logic; library review is separate",
                 }[case["slug"]])
 
 

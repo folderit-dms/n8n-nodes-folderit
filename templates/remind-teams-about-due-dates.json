@@ -8,7 +8,7 @@
       "typeVersion": 1,
       "position": [
         0,
-        1900
+        1300
       ],
       "parameters": {}
     },
@@ -19,7 +19,7 @@
       "typeVersion": 3.4,
       "position": [
         240,
-        1900
+        1300
       ],
       "parameters": {
         "mode": "raw",
@@ -34,7 +34,7 @@
       "typeVersion": 1.1,
       "position": [
         480,
-        1900
+        1300
       ],
       "parameters": {
         "resource": "table",
@@ -80,7 +80,7 @@
       "typeVersion": 2,
       "position": [
         720,
-        1900
+        1300
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -94,7 +94,7 @@
       "typeVersion": 1.1,
       "position": [
         960,
-        1900
+        1300
       ],
       "parameters": {
         "resource": "row",
@@ -126,7 +126,7 @@
       "typeVersion": 2,
       "position": [
         1200,
-        1900
+        1300
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -140,7 +140,7 @@
       "typeVersion": 2.2,
       "position": [
         1440,
-        1900
+        1300
       ],
       "parameters": {
         "conditions": {
@@ -173,7 +173,7 @@
       "typeVersion": 1.1,
       "position": [
         1680,
-        2050
+        1450
       ],
       "parameters": {
         "resource": "row",
@@ -272,7 +272,7 @@
       "typeVersion": 2,
       "position": [
         1920,
-        1900
+        1300
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -307,7 +307,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
+        200,
         400
       ],
       "parameters": {
@@ -322,7 +322,7 @@
       "type": "n8n-nodes-folderit.folderit",
       "typeVersion": 1,
       "position": [
-        480,
+        400,
         400
       ],
       "parameters": {
@@ -339,7 +339,7 @@
       "type": "n8n-nodes-folderit.folderit",
       "typeVersion": 1,
       "position": [
-        720,
+        600,
         400
       ],
       "parameters": {
@@ -355,7 +355,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        960,
+        800,
         400
       ],
       "parameters": {
@@ -369,7 +369,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        1020,
+        1100,
         760
       ],
       "parameters": {
@@ -383,7 +383,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1020,
+        1100,
         400
       ],
       "parameters": {
@@ -415,7 +415,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1260,
+        1300,
         400
       ],
       "parameters": {
@@ -545,7 +545,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1740,
+        1700,
         400
       ],
       "parameters": {
@@ -559,7 +559,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        1980,
+        2400,
         400
       ],
       "parameters": {
@@ -591,7 +591,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2220,
+        2600,
         400
       ],
       "parameters": {
@@ -605,7 +605,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2460,
+        2800,
         400
       ],
       "parameters": {
@@ -638,7 +638,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        2700,
+        3300,
         540
       ],
       "parameters": {
@@ -737,7 +737,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2940,
+        3500,
         540
       ],
       "parameters": {
@@ -751,7 +751,7 @@
       "type": "n8n-nodes-base.microsoftTeams",
       "typeVersion": 2,
       "position": [
-        3180,
+        3700,
         540
       ],
       "parameters": {
@@ -781,7 +781,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3660,
+        4600,
         540
       ],
       "parameters": {
@@ -795,7 +795,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        3900,
+        4900,
         540
       ],
       "parameters": {
@@ -906,7 +906,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4140,
+        5100,
         540
       ],
       "parameters": {
@@ -920,8 +920,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2700,
-        200
+        3000,
+        160
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -934,7 +934,7 @@
       "type": "n8n-nodes-base.dataTable",
       "typeVersion": 1.1,
       "position": [
-        4380,
+        5300,
         400
       ],
       "parameters": {
@@ -1045,7 +1045,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4620,
+        5500,
         400
       ],
       "parameters": {
@@ -1059,7 +1059,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1620,
+        1700,
         120
       ],
       "parameters": {
@@ -1092,8 +1092,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1800,
-        100
+        1900,
+        120
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
@@ -1106,8 +1106,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2000,
-        100
+        2100,
+        120
       ],
       "parameters": {
         "amount": 5,
@@ -1120,62 +1120,110 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        -1160
+        -1000,
+        -100
       ],
       "parameters": {
-        "content": "# Send Folderit document due-date reminders to Microsoft Teams with saved receipts\n\nContract and certificate owners who maintain renewal dates in Folderit.\n\nRead standard Folderit Due dates, calculate the current reminder milestone, and send one confirmed notice per document/date/milestone/destination.\n\n**Folderit Tailor plan with API access is required.** Install `n8n-nodes-folderit` and use the standard-cloud OAuth2 credential. Requires Data Table node v1.1. Core processing was tested on n8n 2.42.5; test your real mailbox/channel before activation. The default export is inactive and contains no credentials or pinned results.\n\n[Folderit installation and connection guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\n![Workflow overview](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/templates/assets/remind-teams-about-due-dates.png)",
-        "width": 1040,
-        "height": 980,
-        "color": 5
+        "content": "### How it works\nContract and certificate owners who maintain renewal dates in Folderit. Read standard Folderit Due dates, calculate the current reminder milestone, and send one confirmed notice per document/date/milestone/destination. Completed receipts suppress repeats. An uncertain destination result stops processing and holds the lock for manual recovery.\n\n### Setup\nRequires Folderit **Tailor with API access**, a dedicated test destination and provider credentials. Install Folderit using the connection guide below. Tested on n8n **2.46.0** with **n8n-nodes-folderit 0.4.0**; Data Table v1.1 is required.\n\n1. Keep inactive. Choose a stable table name in **Ledger setup settings** and run only **1. Set up receipt table**, once at a time in the same n8n project.\n2. Select the SAME **Folderit OAuth2 API** credential in both Folderit read nodes. Enter accountUid, folderUid, teamId and channelId in **Settings**. Select a delegated **Microsoft Teams OAuth2** credential in the send node. Set reminderDays and overdueDays as needed. Paste ledgerTableId from the manual setup branch into Settings. Never put secrets in Settings. Copies processing the same input must share the table.\n3. Keep the schedule off while testing future, due-today, overdue and missing-date documents. Inspect actual channel messages and repeat suppression before activation.\n\n### Customization\nChange reminderDays and overdueDays. This reads standard Due dates, not document text or custom metadata. Dates and the 09:00 schedule use UTC; folder scans are not recursive.\n\n[Connection and first-run guide](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/) · [Recovery instructions](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/CUSTOMER-WORKFLOWS.md#recovery-inspect-before-retrying)\n\n[Workflow image](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/templates/assets/remind-teams-about-due-dates.png)",
+        "width": 860,
+        "height": 900,
+        "color": 1
       }
     },
     {
-      "id": "02fc395d-a1fc-5236-9645-92324cc97a10",
-      "name": "Configure before activation",
+      "id": "3f600859-4ff2-57e9-a9ca-14196dd051ed",
+      "name": "Intake and selection",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1120,
-        -760
+        -80,
+        200
       ],
       "parameters": {
-        "content": "# Configure before activation\n\n1. Keep this workflow inactive. Create credentials in n8n's credential store.\n2. Run the separate **1. Set up receipt table** manual branch once, without running the service trigger. Run setup one at a time in the SAME n8n project.\n3. Open **Copy ledgerTableId into Settings** and copy its `ledgerTableId`.\n4. Select the SAME **Folderit OAuth2 API** credential in both Folderit read nodes. Enter accountUid, folderUid, teamId and channelId in **Settings**. Select a delegated **Microsoft Teams OAuth2** credential in the send node. Set reminderDays and overdueDays as needed. Paste ledgerTableId from the manual setup branch into Settings.\n5. All copies processing the same source/destination must share the same table. Setup reuses an existing table of that name and preserves receipts. Keep its name stable.\n6. Complete the acceptance checks, then activate the service trigger. Never put passwords, API secrets or tokens in Settings.",
-        "width": 1160,
-        "height": 650,
-        "color": 4
+        "content": "## 2 · Select the current reminder\nRead standard Due dates and choose one current milestone, not every missed milestone. Missing dates are skipped; malformed dates fail. A changed date starts a new reminder cycle; default overdue notices stop after seven days.",
+        "width": 1080,
+        "height": 800,
+        "color": 7
       }
     },
     {
-      "id": "e9a29720-f274-5e68-9122-358e0d8bcb56",
-      "name": "Provider behavior",
+      "id": "7d00c2a8-7c24-59f0-a13c-c66709a537b7",
+      "name": "Serialize processing",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2360,
-        -760
+        1000,
+        -80
       ],
       "parameters": {
-        "content": "## Dates and reminders\nSet each test document's standard Folderit **Due date**. This workflow does not extract dates from content, read arbitrary custom metadata, or decide legal expiry. Folderit records are only read. The folder scan is not recursive.\n\nThe schedule is 09:00 UTC; comparisons use UTC calendar days. Default milestones are 30, 7, 1 and 0 days. At 20 days remaining, the 30-day milestone is sent; it does not send every missed milestone. The 0-day notice can be sent once through 7 days overdue. A changed Due date starts a new cycle. Missing dates are skipped; malformed dates fail visibly.",
-        "width": 1160,
-        "height": 620,
-        "color": 5
+        "content": "## 3 · Process one item at a time\nA shared lock serializes overlapping runs. Confirm ownership before continuing; competing runs wait for about one minute, then stop. There is no automatic lock expiry: a failed run needs inspection.",
+        "width": 1280,
+        "height": 1080,
+        "color": 7
       }
     },
     {
-      "id": "d786d7fb-5a7b-57d5-b2ba-b42c27f823c6",
-      "name": "Recovery and duplicate handling",
+      "id": "6fe025b5-0e7f-5167-9633-5ffbd340fbd6",
+      "name": "Check saved receipts",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3600,
-        -760
+        2300,
+        -80
       ],
       "parameters": {
-        "content": "## Inspect before retrying\nEach destination action first saves a pending receipt. A confirmed result marks it done. A repeated input checks that receipt.\n\nThere is one shared processing lock, with **no automatic expiry**. A failed or uncertain action holds the lock. Uploads and Teams messages are never automatically retried.\n\n1. Open the failed execution and confirm its owner has stopped.\n2. Inspect the pending receipt and the actual Folderit file or Teams message.\n3. If the action occurred, verify its exact identity; record its destination ID and mark only that receipt done.\n4. Only after proving no action occurred and no old request can finish may you remove that pending receipt.\n5. Reconcile all pending work before setting the lock free and its owner blank. Keep all completed receipts.\n6. Retry the retained failed input. If the result is uncertain, keep it blocked.\n\nCompeting runs wait for the lock for about one minute. This is duplicate protection with manual recovery, not an exactly-once transaction. Keep failed executions/binaries long enough for recovery and monitor table quotas.\n",
-        "width": 1320,
-        "height": 750,
-        "color": 3
+        "content": "## 4 · Skip confirmed work\nLook up the item’s durable receipt. Completed work follows the upper bypass; a new item continues to the destination action. Pending or inconsistent receipts stop for recovery instead of repeating an uncertain action.",
+        "width": 880,
+        "height": 1080,
+        "color": 7
+      }
+    },
+    {
+      "id": "817d9d93-790e-530d-80cf-de45988fdd4a",
+      "name": "Record before writing",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3200,
+        200
+      ],
+      "parameters": {
+        "content": "## 5 · Record before notifying\nSave a pending receipt before posting to Teams. Use a delegated work account that can post in the configured channel. A failed or uncertain response holds the lock; inspect the channel before retrying.",
+        "width": 900,
+        "height": 800,
+        "color": 7
+      }
+    },
+    {
+      "id": "1ad92d24-6baf-504e-82fa-2b81c30a74d8",
+      "name": "Verify the destination",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4100,
+        200
+      ],
+      "parameters": {
+        "content": "## 6 · Check the returned message\nRequire a message ID from Teams before completing the receipt. During acceptance testing, also open the actual channel and check its body and destination; a green execution alone is insufficient.",
+        "width": 700,
+        "height": 800,
+        "color": 7
+      }
+    },
+    {
+      "id": "8a749add-9b7c-5564-a9c1-a17159d4ff90",
+      "name": "Complete and release",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4800,
+        200
+      ],
+      "parameters": {
+        "content": "## 7 · Save the result, then unlock\nConfirm the completed receipt before freeing the lock and taking the next item. Retain completed receipts. After a failure, confirm the old owner has stopped and reconcile every pending result before releasing its lock.",
+        "width": 900,
+        "height": 800,
+        "color": 7
       }
     },
     {
@@ -1184,46 +1232,14 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        0,
-        970
+        -80,
+        1080
       ],
       "parameters": {
-        "content": "# Run this branch once\n\nThis branch creates or reuses the receipt table and validates its lock. It does not connect to Folderit or Microsoft and does not send mail.\n\nOpen **Ledger setup settings** and choose a stable table name, then execute **1. Set up receipt table**. Copy the final table ID into the main **Settings** node above. Do not run setup concurrently. Preserve this table when upgrading or duplicating the main workflow.",
-        "width": 1500,
-        "height": 420,
-        "color": 4
-      }
-    },
-    {
-      "id": "72836b68-05ba-5bd5-8e68-fb4a07900c5c",
-      "name": "Acceptance checks",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        1650,
-        970
-      ],
-      "parameters": {
-        "content": "# Test your actual connections\n\nUse synthetic documents with a future, due-today, overdue and missing Due date. Test invalid-date handling separately. Inspect each actual Teams message, then repeat the run and confirm that the same milestones are suppressed. Test a controlled channel-send failure. Keep the schedule off until all checks pass.",
-        "width": 1450,
-        "height": 420,
-        "color": 5
-      }
-    },
-    {
-      "id": "bd2a5dd5-14e9-5422-9bd5-6a8259f5cb20",
-      "name": "Failures and email alerts",
-      "type": "n8n-nodes-base.stickyNote",
-      "typeVersion": 1,
-      "position": [
-        3220,
-        970
-      ],
-      "parameters": {
-        "content": "# Failure visibility and optional alerts\n\nA failed action stops the run and can leave its receipt/lock pending. Inspect **Executions**, the receipt table and the actual destination before retrying. Keep failed-execution saving on.\n\nFor an email alert, import the [shared SMTP error workflow](https://raw.githubusercontent.com/folderit-dms/n8n-nodes-folderit/main/examples/folderit-failure-alert-email.json), configure its sender/recipient and SMTP credential, save it, then choose it in this workflow's **⋯ → Settings → Error workflow**. SMTP alerts are optional; core processing does not depend on that separate workflow.\n\nProve alert delivery with a controlled failure in an activated test workflow. Manual errors do not automatically invoke Error Trigger. An alert workflow can itself fail; monitor the provider separately.",
-        "width": 1700,
-        "height": 540,
-        "color": 3
+        "content": "## 1 · Run setup before the service trigger\nChoose a stable table name, then run this manual branch once. It validates or creates local receipts and the lock without contacting providers. Copy the final ledgerTableId into the main Settings node; preserve this table on upgrades.",
+        "width": 2160,
+        "height": 650,
+        "color": 7
       }
     }
   ],

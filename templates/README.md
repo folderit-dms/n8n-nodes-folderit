@@ -13,7 +13,7 @@ Three original, inactive workflows for Folderit Tailor customers with API access
 3. Create the required provider credentials in n8n's credential store. Never enter API secrets or mailbox passwords in Settings or workflow JSON.
 4. In the imported workflow, find the lower manual branch named **1. Set up receipt table**. Choose a stable table name in **Ledger setup settings** and execute only that branch. Run setup once at a time in the same n8n project. This branch creates local n8n data only; it does not send mail or change Folderit.
 5. Copy `ledgerTableId` from **Copy ledgerTableId into Settings** into the main **Settings** node. Replace every `YOUR_…` value and select credentials in every service node. Copies that should suppress the same input must share the same table.
-6. Read the provider, acceptance and recovery notes. Test actual destination output, repeats, a controlled failure and manual recovery with synthetic data before activation.
+6. Read the yellow overview and follow the numbered white sections. Test actual destination output, repeats, a controlled failure and manual recovery with synthetic data before activation. The [processing and recovery guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/CUSTOMER-WORKFLOWS.md#recovery-inspect-before-retrying) gives the detailed reconciliation procedure.
 7. Optional: import the [shared SMTP failure-alert workflow](support/folderit-failure-alert-email.json), configure its real sender/recipient and SMTP credential, then select it under the main workflow's **⋯ → Settings → Error workflow**. Core processing does not depend on this optional alert workflow. Prove the alert using a controlled error in an activated test workflow; manual errors do not invoke Error Trigger automatically.
 
 A created folder/file belongs in Folderit. An n8n Data Table belongs inside that n8n project. Downloaded workflow binaries stay in n8n until a person downloads them or a later node stores them elsewhere; no Windows/macOS directory is created automatically.
@@ -21,6 +21,8 @@ A created folder/file belongs in Folderit. An n8n Data Table belongs inside that
 ## Validation and current status
 
 These files are **candidates for n8n's template library**, not approved library listings. The underlying processing already passed native Folderit upload/read/download, duplicate/overlap, interrupted-result and recovery tests. Microsoft delivery used a local provider stub in those earlier tests. Current exact-file import and setup results are tracked with the release evidence.
+
+The current canvas revision addresses n8n's sticky-note review: one yellow overview explains How it works, Setup and Customization; short white notes group the actual nodes. All three revised JSONs were imported into fresh local n8n canvases. Processing-node parameters, code, connection targets and workflow settings are identical to the previously provider-tested exports; only annotations and node positions changed. This revision does not add a new provider or claim new live-provider testing.
 
 Real IMAP intake passed in n8n Cloud on 28 October 2026: two permitted synthetic attachments were saved, independently downloaded and matched by SHA-256; the disallowed extension was absent. A repeat left exactly the same two files and two completed receipts, with the processing lock released. The live test found and corrected native IMAP Message-ID mapping. Use this current starter pack for that correction.
 
