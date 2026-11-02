@@ -32,7 +32,12 @@ The normal workflow tables retained their completed receipts and free locks.
 Other error branches have regression coverage; no universal provider or
 exactly-once guarantee is claimed. Optional external SMTP remains unverified.
 
-These candidates are not submitted/approved library listings.
+Library status verified on 2 November 2026:
+- IMAP archive 21947 is published in n8n's template library:
+  https://n8n.io/workflows/21947-archive-imap-email-attachments-to-folderit-with-verified-data-table-receipts/
+- Teams arrival template 22274 is submitted for human review.
+- Due-date template awaits the next submission slot.
+All three are directly importable; approval does not replace account testing.
 All exports are inactive, credential
 free and have no pinned output. Native PNG previews accompany each workflow.
 Final image links are documentation-only additions to the tested graph.
