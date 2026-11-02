@@ -1,4 +1,4 @@
-# Folderit workflow library candidates
+# Folderit workflow library starters
 
 Three original, inactive workflows for Folderit Tailor customers with API access. Each JSON includes a manual receipt-table setup branch, provider instructions, duplicate handling, recovery notes and acceptance checks. No credential or private fixture is included.
 
@@ -20,7 +20,7 @@ A created folder/file belongs in Folderit. An n8n Data Table belongs inside that
 
 ## Validation and current status
 
-These files are **candidates for n8n's template library**, not approved library listings. The underlying processing already passed native Folderit upload/read/download, duplicate/overlap, interrupted-result and recovery tests. Microsoft delivery used a local provider stub in those earlier tests. Current exact-file import and setup results are tracked with the release evidence.
+As verified on **2 November 2026**, the [IMAP attachment archive is published in n8n's template library](https://n8n.io/workflows/21947-archive-imap-email-attachments-to-folderit-with-verified-data-table-receipts/). Open the listing and choose **Use for free**, or import its JSON from this pack. The Teams arrival template (22274) is submitted for human review; the Due-date template awaits the next submission slot. All three remain directly importable. Library publication is separate from connector-version approval and from testing your own connections.
 
 The current canvas revision addresses n8n's sticky-note review: one yellow overview explains How it works, Setup and Customization; short white notes group the actual nodes. All three revised JSONs were imported into fresh local n8n canvases. Processing-node parameters, code, connection targets and workflow settings are identical to the previously provider-tested exports; only annotations and node positions changed. This revision does not add a new provider or claim new live-provider testing.
 
@@ -32,7 +32,7 @@ A controlled send failure preserved a pending receipt and held its isolated proc
 
 Read the [processing and manual-recovery guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/CUSTOMER-WORKFLOWS.md#recovery-inspect-before-retrying). A pending result can mean the external action happened. Keep pending receipts and the lock held until its outcome is established. There is no exactly-once guarantee across services.
 
-Historical customer ZIPs and npm packages remain unchanged. Current attachment-workflow source JSONs include the IMAP correction. For dedicated/custom-domain connections, use the current JSONs in the [deployment guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/examples/deployments/CUSTOMER-WORKFLOWS.md); these three library candidates retain the standard-cloud credential setup.
+Historical customer ZIPs and npm packages remain unchanged. Current attachment-workflow source JSONs include the IMAP correction. For dedicated/custom-domain connections, use the current JSONs in the [deployment guide](https://github.com/folderit-dms/n8n-nodes-folderit/blob/main/examples/deployments/CUSTOMER-WORKFLOWS.md); these three library starters retain the standard-cloud credential setup.
 
 ## Workflow images
 

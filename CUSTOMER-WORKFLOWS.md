@@ -102,7 +102,9 @@ The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) includes
 - Upcoming, due-today and overdue records produced the expected reminders. Far-future and missing dates were skipped. Replays preserved message IDs. Changing one Due date created one new reminder cycle during overlapping runs sharing the same receipts.
 - A controlled send failure retained a pending receipt and held its isolated lock. A fresh replay stopped after bounded waiting without another send. Normal workflow receipts and locks remained unchanged and free.
 
-The current regression suite passes 92 tests. Optional external SMTP and Outlook intake remain unverified. These are downloadable examples, not approved n8n template-library listings, and the checks above do not prove every account, permission or runtime. Test your own connections and recovery process before activation.
+The current regression suite passes 92 tests. Optional external SMTP and Outlook intake remain unverified. The checks above do not prove every account, permission or runtime. Test your own connections and recovery process before activation.
+
+As verified on 2 November 2026, the [single-import IMAP archive is published in n8n's template library](https://n8n.io/workflows/21947-archive-imap-email-attachments-to-folderit-with-verified-data-table-receipts/). The Teams arrival template (22274) is submitted for human review; the Due-date template awaits the next submission slot. All three are available in the starter pack. This template status does not change the separate connector 0.5.0 update review or the validation scope of the additional examples.
 
 ## Historical validation completed on 27 October 2026
 
