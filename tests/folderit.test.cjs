@@ -156,3 +156,38 @@ test('PDF preview requires availability and actual PDF bytes, and uses anonymous
   assert.equal(storage,available?1:0);
  }
 });
+
+test('Options exact version takes precedence over a saved top-level version', async()=>{
+ const bytes=Buffer.from('selected history');
+ const c=context({resource:'file',operation:'download',accountUid:'account',fileUid:'file',versionUid:'old-version',options:{versionUid:'chosen-version'},outputBinaryField:'data'},o=>{
+  if(o.url.endsWith('/versions'))return [{uid:'chosen-version',size:bytes.length}];
+  if(o.url.endsWith('/download')){assert(o.url.endsWith('/versions/chosen-version/download'));return {statusCode:302,headers:{location:'https://bucket.s3.amazonaws.com/opaque'}};}
+  return {uid:'file',name:'history.txt'};
+ },async()=>bytes);
+ c.helpers.prepareBinaryData=async data=>({data:data.toString('base64')});
+ const [[out]]=await Folderit.prototype.execute.call(c);assert.equal(out.json.downloadedVersionUid,'chosen-version');
+});
+test('explicitly blank Options version selects current bytes despite an old saved top-level value',async()=>{
+ const c=context({resource:'file',operation:'download',accountUid:'a',fileUid:'file',versionUid:'old-version',options:{versionUid:''},outputBinaryField:'data'},o=>{
+  assert(!o.url.includes('/versions'));return o.url.endsWith('/download')?{statusCode:302,headers:{location:'https://bucket.s3.amazonaws.com/current'}}:{uid:'file',name:'current.txt'};
+ },async()=>Buffer.from('current'));
+ c.helpers.prepareBinaryData=async data=>({data:data.toString('base64')});
+ const [[out]]=await Folderit.prototype.execute.call(c);assert.equal(out.json.downloadedVersionUid,undefined);
+});
+test('Options scope mismatch prevents a destination write before any API call',async()=>{
+ const c=context({resource:'folder',operation:'create',accountUid:'a',folderUid:'parent',name:'Synthetic',options:{expectedConnectionScope:'["https://api.apollo.folderit.com","a"]'}},()=>({uid:'unexpected'}));
+ await assert.rejects(Folderit.prototype.execute.call(c),/expected deployment\/account/);assert.equal(c.calls.length,0);
+});
+test('explicitly blank Options scope overrides a previous top-level scope',async()=>{
+ const c=context({resource:'folder',operation:'create',accountUid:'a',folderUid:'parent',name:'Synthetic',expectedConnectionScope:'["https://api.apollo.folderit.com","a"]',options:{expectedConnectionScope:''}},()=>({uid:'created'}));
+ const [[out]]=await Folderit.prototype.execute.call(c);assert.equal(out.json.uid,'created');assert.equal(c.calls.length,1);
+});
+test('optional version and scope are available in one Options collection, with old export fields hidden',()=>{
+ const properties=new Folderit().description.properties;
+ const options=properties.find(p=>p.name==='options'&&p.type==='collection');
+ assert(options,'Options collection is required');
+ for(const name of ['versionUid','expectedConnectionScope']){
+  assert(options.options.some(p=>p.name===name));
+  assert(properties.filter(p=>p.name===name).every(p=>p.type==='hidden'));
+ }
+});
