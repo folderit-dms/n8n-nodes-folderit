@@ -12,8 +12,6 @@ import {
 	CLOUD_WEB,
 	LEGACY_CREDENTIAL,
 	INSTANCE_CREDENTIAL,
-	pinHost,
-	pinnedRequest,
 	withLinks,
 	publicUrl,
 } from './deployment';
@@ -50,6 +48,37 @@ export async function connectionDeployment(context: Context) {
 	return deployment(credentials);
 }
 
+export async function accessibleAccounts(context: Context): Promise<IDataObject[]> {
+	const rows: IDataObject[] = [],
+		seen = new Set<string>();
+	let cursor: string | undefined;
+	for (let page = 1; page <= 5; page++) {
+		const response = await api(context, '/accounts', {
+			returnFullResponse: true,
+			qs: { page, 'per-page': 100, fields: 'uid,name', ...(cursor ? { cursor } : {}) },
+			headers: { 'X-Pagination': '1' },
+		});
+		const current = collection(response.body ?? response);
+		if (current.length > 100)
+			throw new UserError(
+				'Account discovery returned an incomplete list. Enter an exact Account UID.',
+			);
+		for (const row of current) {
+			const uid = validateUid(String(row.uid || ''));
+			if (seen.has(uid))
+				throw new UserError('Account discovery repeated an identity; no account was selected.');
+			seen.add(uid);
+			rows.push(row);
+		}
+		const next = response.headers?.['x-pagination-cursor'];
+		if (!next && current.length < 100) return rows;
+		if (next && (typeof next !== 'string' || next === cursor))
+			throw new UserError('Account discovery repeated an invalid cursor.');
+		cursor = next;
+	}
+	throw new UserError('Account discovery reached its bound. Enter an exact Account UID.');
+}
+
 export async function resolveAccount(context: Context, value: unknown): Promise<string> {
 	if (value) return validateUid(String(value));
 	if (credentialType(context) === INSTANCE_CREDENTIAL) {
@@ -58,7 +87,10 @@ export async function resolveAccount(context: Context, value: unknown): Promise<
 		if (c.accountUid || c.selectedAccountUid)
 			return validateUid(String(c.accountUid || c.selectedAccountUid));
 	}
-	const accounts = collection(await api(context, '/accounts'));
+	const accounts =
+		credentialType(context) === INSTANCE_CREDENTIAL
+			? await accessibleAccounts(context)
+			: collection(await api(context, '/accounts'));
 	if (accounts.length !== 1)
 		throw new UserError(
 			'Select an exact account. Automatic selection is allowed only when exactly one accessible account exists.',
@@ -116,15 +148,7 @@ export async function storageRequest(context: Context, options: IHttpRequestOpti
 		disableFollowRedirect: true,
 		sendCredentialsOnCrossOriginRedirect: false,
 	};
-	if (credentialType(context) === LEGACY_CREDENTIAL)
-		return await context.helpers.httpRequest(request);
-	if (typeof context.helpers.getSecureEgressFilter !== 'function')
-		throw new UserError(
-			'Update n8n: this deployment connection requires the secure egress helper.',
-		);
-	const origin = new URL(options.url).origin;
-	const address = await pinHost(context.helpers.getSecureEgressFilter('enforced'), origin);
-	return await context.helpers.httpRequest(pinnedRequest(request, origin, address));
+	return await context.helpers.httpRequest({ ...request, skipSslCertificateValidation: false });
 }
 export function validateUid(value: string): string {
 	const uid = typeof value === 'string' ? value.trim() : '';
@@ -181,32 +205,39 @@ export async function api(
 				type,
 				optionsForRequest,
 			);
-		if (typeof context.helpers.getSecureEgressFilter !== 'function')
-			throw new UserError('Update n8n: deployment connections require the secure egress helper.');
-		const filter = context.helpers.getSecureEgressFilter('enforced');
-		const apiAddress = await pinHost(filter, d.apiOrigin),
-			authAddress = await pinHost(filter, d.authOrigin);
 		const credentials = await context.getCredentials(type);
-		assertBinding(credentials);
-		const data = {
-			...credentials,
-			_folderitNetwork: { apiAddress, authAddress },
-			...(Number(credentials.sessionExpiresAt) <= Date.now() + 30000 || credentials.verifiedApiAddress !== apiAddress ? { sessionToken: '' } : {}),
-		};
-		const selected = context.getNode().credentials?.[type];
+		const selectedAccount = credentials.accountUid || credentials.selectedAccountUid;
+		const requestedAccount = /^\/accounts\/([^/]+)/.exec(path)?.[1];
+		if (selectedAccount && requestedAccount && requestedAccount !== selectedAccount)
+			throw new UserError(
+				'The requested account does not match this connection. Create a separate account connection.',
+			);
+		const read = optionsForRequest.method === 'GET';
+		if (!read && requestedAccount) {
+			// A harmless read lets n8n renew a rejected token before a write. Never replay a write.
+			const account = await context.helpers.httpRequestWithAuthentication.call(
+				context,
+				type,
+				{
+					method: 'GET',
+					url: `${d.apiOrigin}/v2/accounts/${validateUid(requestedAccount)}`,
+					qs: { fields: 'uid' },
+					json: true,
+					timeout: 15000,
+					disableFollowRedirect: true,
+					sendCredentialsOnCrossOriginRedirect: false,
+					skipSslCertificateValidation: false,
+				},
+				{ oauth2: { tokenExpiredStatusCode: 401 } },
+			);
+			if (account.uid !== requestedAccount)
+				throw new UserError('The connection did not verify the exact account before writing.');
+		}
 		const response = await context.helpers.httpRequestWithAuthentication.call(
 			context,
 			type,
-			pinnedRequest(optionsForRequest, d.apiOrigin, apiAddress),
-			{
-				credentialsDecrypted: {
-					id: selected?.id || '',
-					name: selected?.name || 'Folderit Connection',
-					type,
-					data,
-				},
-				preAuthenticationRetryStatusCode: optionsForRequest.method === 'GET' ? 401 : [],
-			},
+			{ ...optionsForRequest, skipSslCertificateValidation: false },
+			{ oauth2: { tokenExpiredStatusCode: read ? 401 : [], skipTokenRefresh: !read } },
 		);
 		return withLinks(response, d);
 	} catch (error) {

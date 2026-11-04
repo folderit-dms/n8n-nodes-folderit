@@ -1,4 +1,3 @@
-import { testFolderitConnection } from './connection-test';
 import type { INodeType, INodeTypeDescription, IPollFunctions } from 'n8n-workflow';
 import { NodeConnectionTypes } from 'n8n-workflow';
 import { loadOptions } from './discovery';
@@ -26,7 +25,6 @@ export class FolderitTrigger implements INodeType {
 			{
 				name: 'folderitApi',
 				required: true,
-				testedBy: 'testFolderitConnection',
 				displayOptions: { show: { authentication: ['folderitApi'] } },
 			},
 		],
@@ -74,7 +72,6 @@ export class FolderitTrigger implements INodeType {
 		],
 	};
 	methods = {
-		credentialTest: { testFolderitConnection },
 		loadOptions: { getAccounts: loadOptions.getAccounts },
 	};
 	async poll(this: IPollFunctions) {
