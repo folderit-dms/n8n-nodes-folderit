@@ -24,6 +24,7 @@ jobs:
         run: node -e 'if(require("./package.json").version !== process.env.APPROVED_VERSION) process.exit(1)'
       - run: npm run build
       - run: npm run lint
+      - run: npm run lint:release
       - run: npm test
       - run: npm pack
       - uses: actions/upload-artifact@v4
