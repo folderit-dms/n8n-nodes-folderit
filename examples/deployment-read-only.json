@@ -75,8 +75,10 @@
         "operation": "download",
         "accountUid": "",
         "fileUid": "={{ $('Existing file settings').first().json.fileUid }}",
-        "versionUid": "={{ $('Existing file settings').first().json.versionUid }}",
-        "outputBinaryField": "document"
+        "outputBinaryField": "document",
+        "options": {
+          "versionUid": "={{ $('Existing file settings').first().json.versionUid }}"
+        }
       }
     },
     {
