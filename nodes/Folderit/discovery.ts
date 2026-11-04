@@ -1,6 +1,14 @@
 import type { IDataObject, ILoadOptionsFunctions, INodePropertyOptions } from 'n8n-workflow';
 import { UserError } from 'n8n-workflow';
-import { api, collection, request, validateUid, resolveAccount, credentialType } from './api';
+import {
+	api,
+	collection,
+	request,
+	validateUid,
+	resolveAccount,
+	credentialType,
+	accessibleAccounts,
+} from './api';
 import type { Context } from './api';
 export async function definitions(context: Context, account: string): Promise<IDataObject[]> {
 	const output: IDataObject[] = [];
@@ -55,7 +63,9 @@ export const loadOptions = {
 		const exact = c?.accountUid || c?.selectedAccountUid;
 		const all = exact
 			? [await request(this, validateUid(String(exact)), 'GET', '')]
-			: collection(await api(this, '/accounts'));
+			: c
+				? await accessibleAccounts(this)
+				: collection(await api(this, '/accounts'));
 		return all
 			.filter((r) => typeof r.uid === 'string')
 			.map((r) => ({ name: `${r.name ?? r.uid} (${r.uid})`, value: String(r.uid) }))

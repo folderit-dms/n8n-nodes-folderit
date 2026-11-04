@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 — candidate, not published
+
+- Use n8n's built-in OAuth2 client-credentials transport and first-save credential test for deployment connections. Preserve the published credential identifier and existing standard-cloud credentials.
+- Derive the sibling token endpoint from a validated API URL; remove the custom token exchange, DNS pinning and deprecated credential-test adapter. Keep account-scope checks, anonymous signed-storage transfers and no write replay.
+- Group Version UID and Expected Connection Scope under Options. Retain compatibility with older top-level values and update only the separate deployment-aware examples.
+- Use n8n's credential `$self` expression context for the derived token URL and preserve hidden 0.5.0 binding fields during normalization. Deployment credentials follow n8n's standard OAuth2 access model, including HTTP Request use subject to allowed-domain settings.
+- Validate native standard-demo and Apollo credential tests, selectors and exact downloaded bytes locally. n8n Cloud verification and authenticated Chaffinch acceptance remain outstanding.
+
 ## Live workflow-provider validation — 2026-10-28
 
 - Verify a real scheduled Folderit arrival notice in Microsoft Teams, including exact-folder filtering and replay without another message.

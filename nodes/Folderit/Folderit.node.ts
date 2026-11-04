@@ -1,5 +1,4 @@
 import { createHash } from 'crypto';
-import { testFolderitConnection } from './connection-test';
 import type {
 	IDataObject,
 	IExecuteFunctions,
@@ -34,15 +33,7 @@ import {
 import { NodeApiError, NodeConnectionTypes, NodeOperationError, UserError } from 'n8n-workflow';
 
 const properties: INodeProperties[] = [
-	{
-		displayName: 'Version UID',
-		name: 'versionUid',
-		type: 'string',
-		default: '',
-		description:
-			'Optional exact version from Get Versions. Blank downloads the current file or preview. An exact version must exist in bounded history before downloading.',
-		displayOptions: { show: { resource: ['file'], operation: ['download', 'preview'] } },
-	},
+	{ displayName: 'Version UID', name: 'versionUid', type: 'hidden', default: '' },
 	connectionProperty,
 	{
 		displayName: 'Operation',
@@ -274,11 +265,35 @@ const properties: INodeProperties[] = [
 	{
 		displayName: 'Expected Connection Scope',
 		name: 'expectedConnectionScope',
-		type: 'string',
+		type: 'hidden',
 		default: '',
-		description:
-			'Optional safety check: use connectionScope from a previous Connection/Get step. A different deployment or account stops before this action. This does not change routing.',
+	},
+	{
+		displayName: 'Options',
+		name: 'options',
+		type: 'collection',
+		placeholder: 'Add Option',
+		default: {},
 		displayOptions: { hide: { resource: ['connection'] } },
+		options: [
+			{
+				displayName: 'Expected Connection Scope',
+				name: 'expectedConnectionScope',
+				type: 'string',
+				default: '',
+				description:
+					'Use connectionScope from an earlier Connection/Get step. A different deployment or account stops before the action. This does not change routing.',
+			},
+			{
+				displayName: 'Version UID',
+				name: 'versionUid',
+				type: 'string',
+				default: '',
+				description:
+					'Exact version from Get Versions. Blank downloads the current file or preview. The exact version must exist in bounded history before downloading.',
+				displayOptions: { show: { '/resource': ['file'], '/operation': ['download', 'preview'] } },
+			},
+		],
 	},
 ];
 
@@ -324,7 +339,6 @@ export class Folderit implements INodeType {
 			{
 				name: 'folderitApi',
 				required: true,
-				testedBy: 'testFolderitConnection',
 				displayOptions: { show: { authentication: ['folderitApi'] } },
 			},
 		],
@@ -332,7 +346,6 @@ export class Folderit implements INodeType {
 	};
 
 	methods = {
-		credentialTest: { testFolderitConnection },
 		loadOptions: { ...loadOptions, getWorkflows },
 	};
 
@@ -351,8 +364,14 @@ export class Folderit implements INodeType {
 					throw new UserError(
 						'Binary file operations require a normal Folderit workflow node, not an AI tool.',
 					);
+				const options = (this.getNodeParameter('options', i, {}) || {}) as IDataObject;
+				// Keep expressions in previously exported top-level fields working after this UI move.
+				const option = (name: string) =>
+					Object.prototype.hasOwnProperty.call(options, name)
+						? options[name]
+						: this.getNodeParameter(name, i, '');
 				const account = await resolveAccount(this, get('accountUid'));
-				const expectedScope = String(this.getNodeParameter('expectedConnectionScope', i, '') || '');
+				const expectedScope = String(option('expectedConnectionScope') || '');
 				if (
 					expectedScope &&
 					expectedScope !== JSON.stringify([(await connectionDeployment(this)).apiOrigin, account])
@@ -384,7 +403,7 @@ export class Folderit implements INodeType {
 					if (!field || ['__proto__', 'constructor', 'prototype'].includes(field))
 						throw new UserError('Enter a valid output binary field name.');
 					const file = await request(this, account, 'GET', `/files/${uid}`);
-					const versionUid = String(this.getNodeParameter('versionUid', i, '') || '').trim();
+					const versionUid = String(option('versionUid') || '').trim();
 					let selectedVersion: IDataObject | undefined;
 					if (versionUid) {
 						validateUid(versionUid);

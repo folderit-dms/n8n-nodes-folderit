@@ -490,7 +490,9 @@
         "folderUid": "={{ $json.folderUid }}",
         "binaryPropertyName": "data",
         "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "options": {
+          "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        }
       }
     },
     {
@@ -508,7 +510,9 @@
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $json.uid }}",
         "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "options": {
+          "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        }
       }
     },
     {
@@ -527,7 +531,9 @@
         "fileUid": "={{ $json.uid }}",
         "outputBinaryField": "verifiedFile",
         "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "options": {
+          "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        }
       }
     },
     {
