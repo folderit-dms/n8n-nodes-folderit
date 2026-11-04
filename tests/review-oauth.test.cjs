@@ -1,9 +1,9 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Expression } = require('n8n-workflow');
-const { FolderitApi } = require('../dist/credentials/FolderitApi.credentials');
+const { FolderitConnectionOAuth2Api } = require('../dist/credentials/FolderitConnectionOAuth2Api.credentials');
 const { api, resolveAccount, storageRequest } = require('../dist/nodes/Folderit/api');
-const credential = new FolderitApi();
+const credential = new FolderitConnectionOAuth2Api();
 const nativeTest = credential.test;
 function evaluate(value, credentials) {
   return new Expression('UTC').resolveSimpleParameterValue(value, { $credentials: credentials, $self: credentials });
@@ -13,7 +13,7 @@ function context(credentials = {}, respond = () => ({ uid: 'account' })) {
   const c = { apiUrl: 'https://api.my.chaffinch.com', accountUid: 'account', ...credentials };
   return {
     calls, getCredentials: async () => c,
-    getNode: () => ({ name: 'Synthetic', type: 'n8n-nodes-folderit.folderit', parameters: { authentication: 'folderitApi' }, credentials: { folderitApi: { id: 'synthetic', name: 'Synthetic' } } }),
+    getNode: () => ({ name: 'Synthetic', type: 'n8n-nodes-folderit.folderit', parameters: { authentication: 'folderitConnectionOAuth2Api' }, credentials: { folderitConnectionOAuth2Api: { id: 'synthetic', name: 'Synthetic' } } }),
     helpers: {
       httpRequestWithAuthentication: async (type, options, extra) => { calls.push({ type, ...options, extra }); return respond(options); },
       httpRequest: async options => { calls.push(options); return Buffer.from('synthetic'); },
@@ -51,7 +51,7 @@ test('first-save credential test is a normal deployment-scoped read without a bo
 test('custom deployment read uses the inherited OAuth2 helper without requiring a saved manual session', async () => {
   const c = context(); await api(c, '/accounts/account/files/file');
   assert.equal(c.calls.length, 1);
-  assert.equal(c.calls[0].type, 'folderitApi');
+  assert.equal(c.calls[0].type, 'folderitConnectionOAuth2Api');
   assert.equal(c.calls[0].url, 'https://api.my.chaffinch.com/v2/accounts/account/files/file');
   assert.equal(c.calls[0].disableFollowRedirect, true);
   assert.equal(c.calls[0].skipSslCertificateValidation, false);

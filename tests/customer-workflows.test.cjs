@@ -159,7 +159,7 @@ test('failure email omits raw error details and strips foreign links and query s
 });
 
 test('new customer workflows verify credential-owned deployment context before destination processing',()=>{
- for(const name of files.filter(n=>n.includes('safe')||n.includes('to-teams'))){const w=workflows[name];const info=w.nodes.find(n=>n.name==='Read connection context');assert(info);assert.equal(info.parameters.resource,'connection');assert.equal(w.connections.Settings.main[0][0].node,'Read connection context');for(const n of w.nodes.filter(n=>n.type.startsWith('n8n-nodes-folderit.')))assert.equal(n.parameters.authentication,'folderitApi');}
+ for(const name of files.filter(n=>n.includes('safe')||n.includes('to-teams'))){const w=workflows[name];const info=w.nodes.find(n=>n.name==='Read connection context');assert(info);assert.equal(info.parameters.resource,'connection');assert.equal(w.connections.Settings.main[0][0].node,'Read connection context');for(const n of w.nodes.filter(n=>n.type.startsWith('n8n-nodes-folderit.')))assert.equal(n.parameters.authentication,'folderitConnectionOAuth2Api');}
  assert.throws(()=>run(archive,'Split and validate attachments',[],{...refs,'Read connection context':[{json:{apiOrigin:'https://api.custom.org',accountUid:'wrong-account'}}]}),/does not match/);
 });
 test('attachment receipt keys separate deployments while preserving existing cloud keys',()=>{
