@@ -4,7 +4,8 @@ import type { IDataObject, ICredentialDataDecryptedObject } from 'n8n-workflow';
 export const CLOUD_API = 'https://api.folderit.com';
 export const CLOUD_WEB = 'https://my.folderit.com';
 export const CLOUD_AUTH = 'https://auth.folderit.com';
-export const INSTANCE_CREDENTIAL = 'folderitApi';
+export const INSTANCE_CREDENTIAL = 'folderitConnectionOAuth2Api';
+export const RETIRED_INSTANCE_CREDENTIAL = 'folderitApi';
 export const LEGACY_CREDENTIAL = 'folderitOAuth2Api';
 export type Deployment = {
 	apiOrigin: string;

@@ -59,7 +59,9 @@ export function folderOptions(rows: IDataObject[]): INodePropertyOptions[] {
 export const loadOptions = {
 	async getAccounts(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 		const c =
-			credentialType(this) === 'folderitApi' ? await this.getCredentials('folderitApi') : null;
+			credentialType(this) === 'folderitConnectionOAuth2Api'
+				? await this.getCredentials('folderitConnectionOAuth2Api')
+				: null;
 		const exact = c?.accountUid || c?.selectedAccountUid;
 		const all = exact
 			? [await request(this, validateUid(String(exact)), 'GET', '')]
