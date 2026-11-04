@@ -54,7 +54,9 @@
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $('New Folderit file').item.json.entityUid }}",
         "authentication": "folderitApi",
-        "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        "options": {
+          "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
+        }
       }
     },
     {
