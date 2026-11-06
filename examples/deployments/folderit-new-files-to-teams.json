@@ -21,7 +21,7 @@
             }
           ]
         },
-        "authentication": "folderitApi"
+        "authentication": "folderitConnectionOAuth2Api"
       }
     },
     {
@@ -53,7 +53,7 @@
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $('New Folderit file').item.json.entityUid }}",
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "options": {
           "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
         }
@@ -834,7 +834,7 @@
         -170
       ],
       "parameters": {
-        "content": "# New Folderit files → Microsoft Teams\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nTo create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit Connection credential in Read connection context and Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.",
+        "content": "# New Folderit files → Microsoft Teams\nFor **Folderit Tailor-plan users** with API credentials. These individual exports target the unpublished Folderit connector 0.6.0 candidate, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection OAuth2 API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nTo create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nSelect the account/credential in New Folderit file and the same account UID in Settings. Select the same Folderit Connection credential in Read connection context and Read new document details. Connect a delegated Microsoft Teams OAuth2 credential in Send Teams notification. Enter the exact team/channel IDs. The signed-in Microsoft user must be able to post there. App-only Graph message sending is not used.\n\nA blank folderUid watches accessible account events; an exact folder UID excludes child folders. Messages include name, document UID and audit UID, never document content.",
         "width": 1100,
         "height": 650
       }
@@ -864,7 +864,7 @@
         640
       ],
       "parameters": {
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "resource": "connection",
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}"

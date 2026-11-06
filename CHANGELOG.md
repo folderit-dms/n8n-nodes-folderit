@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.5.1 — candidate, not published
+## 0.6.0 — unpublished candidate
+
+- Rename the deployment-only credential to Folderit Connection OAuth2 API (`folderitConnectionOAuth2Api`) to meet n8n's strict scanner naming rules. Existing `folderitApi` deployment connections from 0.5.0/0.5.1 require recreation and reselection; standard-cloud `folderitOAuth2Api` connections remain unchanged.
+- Stop retired deployment selections before credential access or API requests, with migration instructions. No automatic migration or deletion of saved connections.
+- Add a release lint check that disallows inline exemptions, plus migration-boundary tests and an upgrade guide. Keep the official n8n ESLint configuration and all starter/library exports unchanged.
+
+## 0.5.1 — 2026-11-04
+
+Published with provenance and exact-byte verification. The official scanner subsequently rejected the preserved deployment credential name; 0.6.0 prepares the required rename and migration. Cloud approval remains separate.
 
 - Use n8n's built-in OAuth2 client-credentials transport and first-save credential test for deployment connections. Preserve the published credential identifier and existing standard-cloud credentials.
 - Derive the sibling token endpoint from a validated API URL; remove the custom token exchange, DNS pinning and deprecated credential-test adapter. Keep account-scope checks, anonymous signed-storage transfers and no write replay.

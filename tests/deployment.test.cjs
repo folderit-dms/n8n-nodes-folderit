@@ -1,17 +1,17 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const {FolderitApi,binding}=require('../dist/credentials/FolderitApi.credentials');
+const {FolderitConnectionOAuth2Api,binding}=require('../dist/credentials/FolderitConnectionOAuth2Api.credentials');
 const {Folderit}=require('../dist/nodes/Folderit/Folderit.node');
 const {FolderitTrigger}=require('../dist/nodes/Folderit/FolderitTrigger.node');
 const {loadOptions}=require('../dist/nodes/Folderit/discovery');
 const {api,connectionInfo,storageRequest,resolveAccount}=require('../dist/nodes/Folderit/api');
 const D=require('../dist/nodes/Folderit/deployment');
-const credential=new FolderitApi();
+const credential=new FolderitConnectionOAuth2Api();
 const base={apiUrl:'https://api.my.chaffinch.com/#description/introduction',browserUrl:'https://my.chaffinch.com/en/login/',clientId:'synthetic-client',clientSecret:'synthetic-secret'};
 function nodeContext(overrides={},respond=()=>({uid:'same-account'})){
  const data={...base,selectedAccountUid:'same-account'};data.sessionBinding=binding(data);const calls=[];let filters=0;
- const parameters={authentication:'folderitApi',...overrides};
- return {calls,get filters(){return filters;},getNode:()=>({name:'Folderit',type:'n8n-nodes-folderit.folderit',typeVersion:1,position:[0,0],parameters,credentials:{folderitApi:{id:'private-connection',name:'Synthetic'}}}),getNodeParameter:(n,_i,f)=>parameters[n]??f,getCredentials:async()=>data,getInputData:()=>[{json:{}}],continueOnFail:()=>false,helpers:{getSecureEgressFilter:p=>{assert.equal(p,'enforced');filters++;return filter();},httpRequestWithAuthentication:async(t,o,extra)=>{calls.push({type:t,...o,extra});return respond(o);},httpRequest:async o=>{calls.push(o);return Buffer.from('synthetic file');}}};
+ const parameters={authentication:'folderitConnectionOAuth2Api',...overrides};
+ return {calls,get filters(){return filters;},getNode:()=>({name:'Folderit',type:'n8n-nodes-folderit.folderit',typeVersion:1,position:[0,0],parameters,credentials:{folderitConnectionOAuth2Api:{id:'private-connection',name:'Synthetic'}}}),getNodeParameter:(n,_i,f)=>parameters[n]??f,getCredentials:async()=>data,getInputData:()=>[{json:{}}],continueOnFail:()=>false,helpers:{getSecureEgressFilter:p=>{assert.equal(p,'enforced');filters++;return filter();},httpRequestWithAuthentication:async(t,o,extra)=>{calls.push({type:t,...o,extra});return respond(o);},httpRequest:async o=>{calls.push(o);return Buffer.from('synthetic file');}}};
 }
 test('deployment normalization preserves nested domains and independent browser origins',()=>{
  const d=D.deployment(base);assert.equal(d.apiOrigin,'https://api.my.chaffinch.com');assert.equal(d.authOrigin,'https://auth.my.chaffinch.com');assert.equal(d.browserOrigin,'https://my.chaffinch.com');

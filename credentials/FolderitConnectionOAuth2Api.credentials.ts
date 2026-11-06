@@ -39,11 +39,8 @@ const apiOriginExpression = String.raw`(() => {
   return 'https://' + match[1].toLowerCase();
 })()`;
 
-// Preserve the published credential class and machine ID so existing 0.5.0 connections still resolve.
-// eslint-disable-next-line @n8n/community-nodes/cred-class-oauth2-naming, n8n-nodes-base/cred-class-name-missing-oauth2-suffix
-export class FolderitApi implements ICredentialType {
-	// eslint-disable-next-line @n8n/community-nodes/cred-class-oauth2-naming, n8n-nodes-base/cred-class-field-name-missing-oauth2 -- Published credential identity is backwards-compatible
-	name = 'folderitApi';
+export class FolderitConnectionOAuth2Api implements ICredentialType {
+	name = 'folderitConnectionOAuth2Api';
 	displayName = 'Folderit Connection OAuth2 API';
 	extends = ['oAuth2Api'];
 	documentationUrl = 'https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/';

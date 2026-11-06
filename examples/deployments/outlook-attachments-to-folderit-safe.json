@@ -489,7 +489,7 @@
         "accountUid": "={{ $json.accountUid }}",
         "folderUid": "={{ $json.folderUid }}",
         "binaryPropertyName": "data",
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "options": {
           "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
         }
@@ -509,7 +509,7 @@
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $json.uid }}",
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "options": {
           "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
         }
@@ -530,7 +530,7 @@
         "accountUid": "={{ $('Settings').first().json.accountUid }}",
         "fileUid": "={{ $json.uid }}",
         "outputBinaryField": "verifiedFile",
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "options": {
           "expectedConnectionScope": "={{ $('Read connection context').first().json.connectionScope }}"
         }
@@ -903,7 +903,7 @@
         -170
       ],
       "parameters": {
-        "content": "# Archive attachments with saved receipts\nFor **Folderit Tailor-plan users** with API credentials. Requires Folderit connector 0.5.0 or later, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nTo create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nConnect **Microsoft Outlook OAuth2** in the trigger. This uses delegated mailbox access. Use an intake mailbox/folder and test with one synthetic email. The template leaves read/unread status unchanged. The provider mailbox ID is a fallback when the RFC Message-ID is missing; moving mail may change provider IDs.\n\nSet all Settings placeholders, then select the same Folderit Connection credential in Read connection context, Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.",
+        "content": "# Archive attachments with saved receipts\nFor **Folderit Tailor-plan users** with API credentials. These individual exports target the unpublished Folderit connector 0.6.0 candidate, Data Table node v1.1 and the secure egress helper (native test target: n8n 2.42.5). Use Folderit Connection OAuth2 API credentials in every Folderit node; these support standard cloud and public custom deployments. [Install and connect Folderit](https://www.folderit.com/knowledge-base/connect-folderit-to-n8n/)\n\nTo create the credential, use **Credential → Create new credential → Setup credential → Folderit Connection (Cloud or Custom Deployment)**. Save it. In workflows containing **Read connection context**, configure Settings and execute that read to verify this deployment/account before activation. The ledger setup and failure-alert workflows contain no Folderit connection.\n\nRun **folderit-ledger-setup.json** once in the same n8n project. Copy its table ID into Settings. All copies processing the same source/destination must use the SAME table. Choose Folderit credentials in every Folderit node. Never put secrets in Settings.\n\nImport **folderit-failure-alert-email.json**, configure its SMTP connection, save it, then select it in this workflow's **⋯ → Settings → Error workflow**. Error workflows must be tested using an activated workflow; manual runs do not trigger them.\n\nConnect **Microsoft Outlook OAuth2** in the trigger. This uses delegated mailbox access. Use an intake mailbox/folder and test with one synthetic email. The template leaves read/unread status unchanged. The provider mailbox ID is a fallback when the RFC Message-ID is missing; moving mail may change provider IDs.\n\nSet all Settings placeholders, then select the same Folderit Connection credential in Read connection context, Upload attachment, Read uploaded document and Download stored attachment. mailboxScope must remain a stable label for this mailbox. Configure allowedExtensions. Multiple permitted attachments are processed one at a time. Test a replay and confirm no second file appears.",
         "width": 1100,
         "height": 650
       }
@@ -933,7 +933,7 @@
         640
       ],
       "parameters": {
-        "authentication": "folderitApi",
+        "authentication": "folderitConnectionOAuth2Api",
         "resource": "connection",
         "operation": "get",
         "accountUid": "={{ $('Settings').first().json.accountUid }}"

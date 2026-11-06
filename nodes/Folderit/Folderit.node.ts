@@ -14,6 +14,7 @@ import {
 	resolveAccount,
 	connectionInfo,
 	connectionProperty,
+	connectionMigrationNotice,
 	connectionDeployment,
 	storageRequest,
 	validateStorageUrl,
@@ -35,6 +36,7 @@ import { NodeApiError, NodeConnectionTypes, NodeOperationError, UserError } from
 const properties: INodeProperties[] = [
 	{ displayName: 'Version UID', name: 'versionUid', type: 'hidden', default: '' },
 	connectionProperty,
+	connectionMigrationNotice,
 	{
 		displayName: 'Operation',
 		name: 'operation',
@@ -337,9 +339,9 @@ export class Folderit implements INodeType {
 				displayOptions: { show: { authentication: ['folderitOAuth2Api'] } },
 			},
 			{
-				name: 'folderitApi',
+				name: 'folderitConnectionOAuth2Api',
 				required: true,
-				displayOptions: { show: { authentication: ['folderitApi'] } },
+				displayOptions: { show: { authentication: ['folderitConnectionOAuth2Api'] } },
 			},
 		],
 		properties: toolAwareProperties,

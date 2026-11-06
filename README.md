@@ -2,7 +2,7 @@
 
 Folderit document, folder, search, metadata, version and workflow operations, with polling triggers for n8n.
 
-**Release status:** [Version 0.5.0 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.5.0) as of **28 October 2026**, with GitHub Actions provenance. n8n requested OAuth2 and optional-field corrections during its update review on **3 November 2026**. This branch prepares **0.5.1**, which is **not published or verified by n8n**. n8n Cloud continues to offer verified **0.4.0**. Existing 0.4.0 Cloud workflows and downloads remain supported.
+**Release status:** [Version 0.5.1 is published on npm](https://www.npmjs.com/package/n8n-nodes-folderit/v/0.5.1) as of **4 November 2026**, with verified provenance and all 68 package files matching the native-tested build. The official n8n scanner rejects its deployment credential's old class/machine name, so this branch prepares **0.6.0**, an **unpublished, unverified candidate** with an explicit deployment-connection migration. n8n Cloud continues to offer verified **0.4.0**. Existing standard-cloud `folderitOAuth2Api` connections remain supported.
 
 ## Get started
 
@@ -38,15 +38,15 @@ Credentials belong in n8n's credential store. Never put them in workflow JSON, t
 
 ## Deployment connections (unreleased review correction)
 
-**Candidate validation:** on 3 November 2026, isolated n8n 2.42.5 passed standard OAuth2 credential tests for existing standard-demo and Apollo connections, account/folder selector checks, and read-only downloads with independently verified file hashes. Native exact-version downloads passed with both older top-level parameters and the new Options fields. Existing standard-cloud OAuth2 compatibility also passed. Authenticated Chaffinch acceptance and n8n Cloud verification remain separate checks. The candidate is not published.
+**Validation scope:** published 0.5.1 passed the 3 November native standard-demo/Apollo credential tests, selectors and exact-version downloaded-byte checks on isolated n8n 2.42.5. Public 0.5.1 bytes and provenance were independently verified on 4 November, but its strict source scan failed on the deployment credential name. Candidate-specific validation for the 0.6.0 rename is separate; do not infer native/provider or Cloud acceptance from that earlier proof.
 
-This section describes the **unreleased review correction**, not the currently published 0.5.0 package. It uses n8n's built-in OAuth2 client-credentials flow for public single-tenant/custom-domain deployments. Existing standard-cloud OAuth2 credentials retain their original routing. Do not replace a production installation until the correction has been released and your runtime offers it.
+This section describes the **unpublished 0.6.0 naming/migration candidate**, not the currently published 0.5.1 package. It uses n8n's built-in OAuth2 client-credentials flow for public single-tenant/custom-domain deployments. Existing standard-cloud OAuth2 credentials retain their original routing. Do not replace a production installation until the correction has been released and your runtime offers it.
 
-1. Install the review candidate only in an isolated self-hosted test instance. Published 0.4.0 does not contain deployment fields; published 0.5.0 still uses the older two-step credential setup.
+1. Install the review candidate only in an isolated self-hosted test instance. First read [Migrate deployment connections from 0.5.0/0.5.1](MIGRATING-DEPLOYMENT-CREDENTIALS.md). The new machine type is `folderitConnectionOAuth2Api`; old deployment connections must be recreated and reselected. Standard-cloud `folderitOAuth2Api` connections do not need migration.
 2. Open a **Folderit** node, choose **Connection Type → Folderit Connection (Cloud or Custom Deployment)**, then create or select its **Folderit Connection OAuth2 API** credential. Some editor versions put Connection Type under **Credential → Setup credential** instead.
 3. Enter **API or Documentation URL**, the matching **Client ID** and **Client Secret**, and the deployment's **Browser or Sign-in URL**. The cloud API default is prefilled. Examples below are address configurations, not credentials.
 4. Enter the credential's **Account UID** to restrict it to one exact account. Leave it blank only when the client can access exactly one account, or explicitly select an account in each node. A blank node Account UID never chooses the first of several accounts.
-5. Save and test the credential. n8n performs the OAuth2 exchange and a standard read test on first save; no Connection/Get bootstrap is required. For a migrated 0.5.0 connection, save and retest before running workflows. Create a separate credential when changing deployment, account or client keys.
+5. Save and test the credential. n8n performs the OAuth2 exchange and a standard read test on first save; no Connection/Get bootstrap is required. For a replacement 0.5.0/0.5.1 deployment connection, preserve the original exact account and scope, then save and retest before running workflows. Create a separate credential when changing deployment, account or client keys.
 6. Select that same credential in each Folderit action and trigger. Run **Connection → Get** to verify the actual account and inspect the non-secret connection context. Use [deployment-read-only.json](examples/deployment-read-only.json) with an existing test file to verify selectors, downloads and actual bytes.
 
 | Deployment | API/documentation URL | Browser/sign-in URL | Verified authentication origin |
@@ -59,7 +59,7 @@ The connector normalizes supported documentation URLs and appends `/v2` once. It
 
 The deployment credential uses n8n's standard OAuth2 access model. People with access to that saved connection can also select it in HTTP Request nodes, subject to n8n's allowed-domain settings. Folderit permissions and n8n credential sharing still apply. The separate existing standard-cloud credential is unchanged.
 
-**Create a new credential for another deployment, account or replacement client key.** Do not edit a working credential to retarget live workflows. Published 0.5.0 session bindings are still checked when present; the existing credential machine ID is retained for migration. Existing **Standard Cloud OAuth2 (Existing Connections)** credentials and trigger checkpoints keep their original behavior. Switching a trigger to a new credential deliberately starts a new subscription: reconcile outstanding events before activation.
+**Create a new credential for another deployment, account or replacement client key.** Do not edit a working credential to retarget live workflows. The new deployment type keeps binding guards when present. The old deployment machine ID is retired; follow the migration guide to recreate and reselect affected connections. Existing **Standard Cloud OAuth2 (Existing Connections)** credentials and trigger checkpoints keep their original behavior. Switching a trigger to a new credential deliberately starts a new subscription: reconcile outstanding events before activation.
 
 API calls, selectors, pagination, polling, previews and binary operations use the credential's deployment. For workflows with a shared receipt ledger, set **Options → Expected Connection Scope** in every action from `connectionScope` returned by the earlier Connection/Get step. This checks the action's actual deployment and account before a destination write, including when record IDs overlap. The revised deployment-aware exports include that check. Older exports with top-level Version UID or Expected Connection Scope remain supported; adding the corresponding Options field takes precedence, including an explicitly blank value.
 
@@ -79,7 +79,7 @@ For **Folderit Tailor-plan users**, the [current customer workflow guide](CUSTOM
 - New-document notifications and Due-date reminders in Microsoft Teams.
 - Shared failure emails and one-time receipt-table setup.
 
-Version 0.5.0 has [separate deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`, with a separate `Folderit-n8n-deployment-workflows-0.5.0.zip`. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
+The unpublished 0.6.0 candidate has [updated individual deployment-aware variants](examples/deployments/CUSTOMER-WORKFLOWS.md) under `examples/deployments/`. The separate `Folderit-n8n-deployment-workflows-0.5.0.zip` remains a historical 0.5.0 export and requires the migration described above. They include Connection/Get and action scope guards. The existing public download bundle and legacy exports are preserved for 0.4.0 users.
 
 The [single-import starter pack](Folderit-n8n-library-starter-pack.zip) provides three standard-cloud workflows with embedded manual receipt-table setup, workflow images and recovery notes. [Setup and validation status](templates/README.md). Fresh import and table creation/reuse passed. Real IMAP intake, exact downloaded-byte verification and duplicate replay also passed in n8n Cloud; the current starter pack includes the native IMAP Message-ID correction. Real Teams arrival notices, Due-date reminders, replay suppression, a changed-date overlap and controlled send-failure blocking also passed in n8n Cloud, with independent reads of the actual messages. Optional external SMTP remains unverified. As verified on 2 November 2026, the [IMAP archive is published in n8n's template library](https://n8n.io/workflows/21947-archive-imap-email-attachments-to-folderit-with-verified-data-table-receipts/), the Teams arrival template (22274) is submitted for human review, and the Due-date template awaits the next submission slot. All three can be imported directly from the starter pack.
 
@@ -161,6 +161,7 @@ Use a current Node.js 24 LTS release.
 npm ci
 npm run build
 npm run lint
+npm run lint:release
 npm test
 npm run dev -- --custom-user-folder ../work/n8n-folderit-local
 ```

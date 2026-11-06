@@ -4,6 +4,7 @@ import type {
 	IHttpRequestOptions,
 	ILoadOptionsFunctions,
 	IPollFunctions,
+	INodeProperties,
 } from 'n8n-workflow';
 import { NodeApiError, NodeOperationError, UserError } from 'n8n-workflow';
 import {
@@ -12,13 +13,26 @@ import {
 	CLOUD_WEB,
 	LEGACY_CREDENTIAL,
 	INSTANCE_CREDENTIAL,
+	RETIRED_INSTANCE_CREDENTIAL,
 	withLinks,
 	publicUrl,
 } from './deployment';
-import { assertBinding } from '../../credentials/FolderitApi.credentials';
+import { assertBinding } from '../../credentials/FolderitConnectionOAuth2Api.credentials';
 export type Context = IExecuteFunctions | ILoadOptionsFunctions | IPollFunctions;
 export function credentialType(context: Context): string {
-	const type = context.getNode().parameters.authentication || LEGACY_CREDENTIAL;
+	const node = context.getNode();
+	const selected = node.parameters.authentication;
+	if (
+		selected === RETIRED_INSTANCE_CREDENTIAL ||
+		// Native Workflow normalization fills the cloud default when an export omits authentication.
+		((!selected || selected === LEGACY_CREDENTIAL) &&
+			node.credentials?.[RETIRED_INSTANCE_CREDENTIAL] &&
+			!node.credentials?.[LEGACY_CREDENTIAL])
+	)
+		throw new UserError(
+			'Deployment connection migration required: recreate this n8n connection as Folderit Connection OAuth2 API using the same deployment, account and existing Folderit API client, then reselect it in every Folderit node. The saved 0.5.0/0.5.1 connection was not used. See MIGRATING-DEPLOYMENT-CREDENTIALS.md in the package repository.',
+		);
+	const type = selected || LEGACY_CREDENTIAL;
 	if (type !== LEGACY_CREDENTIAL && type !== INSTANCE_CREDENTIAL)
 		throw new UserError('Select a supported Folderit connection type.');
 	return type;
@@ -32,7 +46,20 @@ export const connectionProperty = {
 	options: [
 		{ name: 'Standard Cloud OAuth2 (Existing Connections)', value: LEGACY_CREDENTIAL },
 		{ name: 'Folderit Connection (Cloud or Custom Deployment)', value: INSTANCE_CREDENTIAL },
+		{
+			name: 'Deployment Connection From 0.5.0/0.5.1 (Migration Required)',
+			value: RETIRED_INSTANCE_CREDENTIAL,
+		},
 	],
+};
+
+export const connectionMigrationNotice: INodeProperties = {
+	displayName:
+		'This deployment connection needs migration. Create a Folderit Connection OAuth2 API credential with the same deployment/account and existing API client, choose Folderit Connection (Cloud or Custom Deployment), and reselect it in each Folderit node. Keep scheduled workflows inactive until read-only verification and missed-event reconciliation are complete.',
+	name: 'connectionMigrationNotice',
+	type: 'notice',
+	default: '',
+	displayOptions: { show: { authentication: [RETIRED_INSTANCE_CREDENTIAL] } },
 };
 
 export async function connectionDeployment(context: Context) {

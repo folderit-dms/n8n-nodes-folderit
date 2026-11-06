@@ -83,7 +83,7 @@ export async function pollEvents(context: IPollFunctions): Promise<INodeExecutio
 		event,
 		filter,
 		context.getNode().credentials?.[credentialType(context)]?.id ?? '',
-		...(credentialType(context) === 'folderitApi'
+		...(credentialType(context) === 'folderitConnectionOAuth2Api'
 			? [(await connectionDeployment(context)).apiOrigin]
 			: []),
 	]);

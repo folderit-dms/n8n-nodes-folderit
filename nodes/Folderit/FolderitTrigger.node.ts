@@ -2,7 +2,7 @@ import type { INodeType, INodeTypeDescription, IPollFunctions } from 'n8n-workfl
 import { NodeConnectionTypes } from 'n8n-workflow';
 import { loadOptions } from './discovery';
 import { pollEvents } from './polling';
-import { connectionProperty } from './api';
+import { connectionProperty, connectionMigrationNotice } from './api';
 export class FolderitTrigger implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Folderit Trigger',
@@ -23,13 +23,14 @@ export class FolderitTrigger implements INodeType {
 				displayOptions: { show: { authentication: ['folderitOAuth2Api'] } },
 			},
 			{
-				name: 'folderitApi',
+				name: 'folderitConnectionOAuth2Api',
 				required: true,
-				displayOptions: { show: { authentication: ['folderitApi'] } },
+				displayOptions: { show: { authentication: ['folderitConnectionOAuth2Api'] } },
 			},
 		],
 		properties: [
 			connectionProperty,
+			connectionMigrationNotice,
 			{
 				displayName: 'Account Name or ID',
 				name: 'accountUid',
